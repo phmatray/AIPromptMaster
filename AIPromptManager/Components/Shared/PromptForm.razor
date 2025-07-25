@@ -1,0 +1,295 @@
+@using AIPromptManager.Models
+@using AIPromptManager.Services
+@using System.ComponentModel.DataAnnotations
+@using static AIPromptManager.Components.Shared.ConfirmDialog
+@inject IPromptService PromptService
+
+<div class="max-w-4xl mx-auto">
+    <EditForm Model="@promptModel" OnValidSubmit="@HandleValidSubmit" class="space-y-6">
+        <DataAnnotationsValidator />
+        
+        <!-- Form Header -->
+        <div class="bg-white px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                @(IsEditMode ? "Edit Prompt" : "Create New Prompt")
+            </h2>
+            <p class="mt-1 text-sm text-gray-600">
+                @(IsEditMode ? "Update your prompt details below." : "Fill in the details to create a new prompt.")
+            </p>
+        </div>
+
+        <!-- Form Content -->
+        <div class="bg-white px-6 py-6 space-y-6">
+            <!-- Title Field -->
+            <div class="space-y-2">
+                <label for="title" class="block text-sm font-medium text-gray-700">
+                    Title <span class="text-red-500">*</span>
+                </label>
+                <InputText id="title" 
+                          @bind-Value="promptModel.Title" 
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Enter a descriptive title for your prompt"
+                          maxlength="200" />
+                <ValidationMessage For="@(() => promptModel.Title)" class="text-sm text-red-600" />
+                <p class="text-xs text-gray-500">@(promptModel.Title?.Length ?? 0)/200 characters</p>
+            </div>
+
+            <!-- Description Field -->
+            <div class="space-y-2">
+                <label for="description" class="block text-sm font-medium text-gray-700">
+                    Description
+                </label>
+                <InputTextArea id="description" 
+                              @bind-Value="promptModel.Description" 
+                              rows="3"
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-vertical"
+                              placeholder="Optional description to help you remember what this prompt is for"
+                              maxlength="500" />
+                <ValidationMessage For="@(() => promptModel.Description)" class="text-sm text-red-600" />
+                <p class="text-xs text-gray-500">@(promptModel.Description?.Length ?? 0)/500 characters</p>
+            </div>
+
+            <!-- Content Field -->
+            <div class="space-y-2">
+                <label for="content" class="block text-sm font-medium text-gray-700">
+                    Prompt Content <span class="text-red-500">*</span>
+                </label>
+                <InputTextArea id="content" 
+                              @bind-Value="promptModel.Content" 
+                              rows="8"
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-sm resize-vertical"
+                              placeholder="Enter your AI prompt here..." />
+                <ValidationMessage For="@(() => promptModel.Content)" class="text-sm text-red-600" />
+                <p class="text-xs text-gray-500">
+                    This is the actual prompt text that will be copied to your clipboard.
+                </p>
+            </div>
+
+            <!-- Tags Field -->
+            <TagInput @bind-SelectedTags="selectedTags" 
+                     ErrorMessage="@tagErrorMessage" />
+        </div>
+
+        <!-- Form Actions -->
+        <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+            <!-- Cancel Button -->
+            <button type="button" 
+                    @onclick="HandleCancel"
+                    class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                Cancel
+            </button>
+
+            <!-- Submit Button -->
+            <div class="flex space-x-3">
+                @if (IsEditMode)
+                {
+                    <button type="button" 
+                            @onclick="ShowDeleteConfirmation"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                            disabled="@(isSubmitting || isDeletingPrompt)">
+                        Delete
+                    </button>
+                }
+                
+                <button type="submit" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        @(IsEditMode ? "Updating..." : "Creating...")
+                    }
+                    else
+                    {
+                        @(IsEditMode ? "Update Prompt" : "Create Prompt")
+                    }
+                </button>
+            </div>
+        </div>
+
+        <!-- Validation Summary -->
+        <ValidationSummary class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md" />
+    </EditForm>
+
+    <!-- Delete Confirmation Dialog -->
+    <ConfirmDialog IsVisible="showDeleteConfirmation"
+                   Title="Delete Prompt"
+                   Message="@GetDeleteConfirmationMessage()"
+                   ConfirmText="Delete"
+                   CancelText="Cancel"
+                   ProcessingText="Deleting..."
+                   Type="ConfirmDialogType.Danger"
+                   IsProcessing="isDeletingPrompt"
+                   CloseOnBackdropClick="true"
+                   OnConfirm="ConfirmDelete"
+                   OnCancel="CancelDelete" />
+</div>
+
+@code {
+    [Parameter] public Prompt? ExistingPrompt { get; set; }
+    [Parameter] public EventCallback<Prompt> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<Prompt> OnDelete { get; set; }
+    [Parameter] public EventCallback<string> OnError { get; set; }
+
+    private PromptFormModel promptModel = new();
+    private List<string> selectedTags = new();
+    private string? tagErrorMessage;
+    private bool isSubmitting = false;
+    
+    // Delete confirmation state
+    private bool showDeleteConfirmation = false;
+    private bool isDeletingPrompt = false;
+
+    public bool IsEditMode => ExistingPrompt != null;
+
+    protected override void OnParametersSet()
+    {
+        if (ExistingPrompt != null)
+        {
+            // Populate form with existing prompt data
+            promptModel = new PromptFormModel
+            {
+                Id = ExistingPrompt.Id,
+                Title = ExistingPrompt.Title,
+                Description = ExistingPrompt.Description,
+                Content = ExistingPrompt.Content,
+                RowVersion = ExistingPrompt.RowVersion
+            };
+            
+            selectedTags = ExistingPrompt.Tags.Select(t => t.Name).ToList();
+        }
+        else
+        {
+            // Reset form for new prompt
+            promptModel = new PromptFormModel();
+            selectedTags = new List<string>();
+        }
+        
+        tagErrorMessage = null;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (isSubmitting) return;
+
+        isSubmitting = true;
+        tagErrorMessage = null;
+
+        try
+        {
+            // Validate tags
+            if (selectedTags.Any(tag => tag.Length > 50))
+            {
+                tagErrorMessage = "Tag names cannot exceed 50 characters";
+                return;
+            }
+
+            // Create or update prompt
+            var prompt = new Prompt
+            {
+                Id = promptModel.Id,
+                Title = promptModel.Title.Trim(),
+                Description = string.IsNullOrWhiteSpace(promptModel.Description) ? null : promptModel.Description.Trim(),
+                Content = promptModel.Content.Trim(),
+                Tags = selectedTags.Select(tagName => new Tag { Name = tagName.Trim() }).ToList(),
+                RowVersion = promptModel.RowVersion
+            };
+
+            Prompt savedPrompt;
+            if (IsEditMode)
+            {
+                prompt.CreatedAt = ExistingPrompt!.CreatedAt;
+                prompt.UpdatedAt = DateTime.UtcNow;
+                savedPrompt = await PromptService.UpdatePromptAsync(prompt);
+            }
+            else
+            {
+                prompt.CreatedAt = DateTime.UtcNow;
+                prompt.UpdatedAt = DateTime.UtcNow;
+                savedPrompt = await PromptService.CreatePromptAsync(prompt);
+            }
+
+            await OnSave.InvokeAsync(savedPrompt);
+        }
+        catch (Exception ex)
+        {
+            // Handle validation or save errors
+            tagErrorMessage = $"Error saving prompt: {ex.Message}";
+            await OnError.InvokeAsync(ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    private void ShowDeleteConfirmation()
+    {
+        showDeleteConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (ExistingPrompt == null) return;
+
+        try
+        {
+            isDeletingPrompt = true;
+            StateHasChanged();
+
+            await OnDelete.InvokeAsync(ExistingPrompt);
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync($"Error deleting prompt: {ex.Message}");
+        }
+        finally
+        {
+            isDeletingPrompt = false;
+            showDeleteConfirmation = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetDeleteConfirmationMessage()
+    {
+        if (ExistingPrompt == null) return "Are you sure you want to delete this prompt?";
+        return $"Are you sure you want to delete \"{ExistingPrompt.Title}\"? This action cannot be undone.";
+    }
+
+    // Form model for validation
+    public class PromptFormModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Title is required")]
+        [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+        public string Title { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Content is required")]
+        public string Content { get; set; } = string.Empty;
+
+        // Include RowVersion for optimistic concurrency
+        public byte[]? RowVersion { get; set; }
+    }
+}

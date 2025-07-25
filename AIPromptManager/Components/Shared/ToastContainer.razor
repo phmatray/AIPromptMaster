@@ -1,0 +1,70 @@
+@using AIPromptManager.Services
+@using static AIPromptManager.Components.Shared.Toast
+@inject IToastService ToastService
+@implements IDisposable
+
+@foreach (var toast in activeToasts)
+{
+    <Toast Title="@toast.Title" 
+           Message="@toast.Message" 
+           Type="@toast.Type" 
+           IsVisible="@toast.IsVisible"
+           OnHide="@(() => RemoveToast(toast.Id))" />
+}
+
+@code {
+    private List<ToastModel> activeToasts = new();
+    private int nextToastId = 1;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private void ShowToast(string? title, string? message, ToastType type)
+    {
+        var toast = new ToastModel
+        {
+            Id = nextToastId++,
+            Title = title,
+            Message = message,
+            Type = type,
+            IsVisible = true
+        };
+
+        activeToasts.Add(toast);
+        
+        // Limit to 5 toasts maximum
+        if (activeToasts.Count > 5)
+        {
+            var oldestToast = activeToasts.First();
+            activeToasts.Remove(oldestToast);
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RemoveToast(int toastId)
+    {
+        var toast = activeToasts.FirstOrDefault(t => t.Id == toastId);
+        if (toast != null)
+        {
+            activeToasts.Remove(toast);
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+    }
+
+    private class ToastModel
+    {
+        public int Id { get; set; }
+        public string? Title { get; set; }
+        public string? Message { get; set; }
+        public ToastType Type { get; set; }
+        public bool IsVisible { get; set; }
+    }
+}

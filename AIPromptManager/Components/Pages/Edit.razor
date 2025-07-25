@@ -1,0 +1,152 @@
+@page "/edit/{id:int}"
+@using AIPromptManager.Models
+@using AIPromptManager.Services
+@using AIPromptManager.Components.Shared
+@using static AIPromptManager.Components.Shared.ConfirmDialog
+@inject IPromptService PromptService
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Prompt - AI Prompt Manager</PageTitle>
+
+@if (isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span class="ml-3 text-gray-600">Loading prompt...</span>
+    </div>
+}
+else if (prompt == null)
+{
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">Prompt not found</h3>
+        <p class="mt-1 text-sm text-gray-500">The prompt you're looking for doesn't exist or may have been deleted.</p>
+        <div class="mt-6">
+            <button @onclick="NavigateToPrompts" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Back to Prompts
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="space-y-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Edit Prompt</h1>
+            <p class="mt-1 text-sm text-gray-600">Update your prompt details</p>
+        </div>
+
+        <!-- Prompt Form -->
+        <div class="bg-white shadow rounded-lg">
+            <PromptForm ExistingPrompt="prompt" 
+                       OnSave="@HandleSave" 
+                       OnCancel="@HandleCancel"
+                       OnDelete="@HandleDelete"
+                       OnError="@HandleError" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Prompt? prompt;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrompt();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id > 0)
+        {
+            await LoadPrompt();
+        }
+    }
+
+    private async Task LoadPrompt()
+    {
+        try
+        {
+            isLoading = true;
+            prompt = await PromptService.GetPromptByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading prompt: {ex.Message}", "Error");
+            prompt = null;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSave(Prompt savedPrompt)
+    {
+        try
+        {
+            // Update the local prompt reference to reflect changes immediately
+            prompt = savedPrompt;
+            
+            // Show success message
+            ToastService.ShowSuccess($"Prompt '{savedPrompt.Title}' updated successfully!");
+            
+            // Navigate back to prompts list
+            Navigation.NavigateTo("/prompts");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error updating prompt: {ex.Message}", "Error");
+        }
+    }
+
+    private void HandleCancel()
+    {
+        // Navigate back to prompts list
+        Navigation.NavigateTo("/prompts");
+    }
+
+    private async Task HandleDelete(Prompt promptToDelete)
+    {
+        try
+        {
+            await PromptService.DeletePromptAsync(promptToDelete.Id);
+            
+            // Show success message
+            ToastService.ShowSuccess($"Prompt '{promptToDelete.Title}' deleted successfully!");
+            
+            // Navigate back to prompts list
+            Navigation.NavigateTo("/prompts");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            // Handle case where prompt was already deleted by another user/session
+            ToastService.ShowWarning("This prompt has already been deleted.", "Warning");
+            Navigation.NavigateTo("/prompts");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error deleting prompt: {ex.Message}", "Delete Failed");
+        }
+    }
+
+    private void HandleError(string errorMessage)
+    {
+        // Show error message
+        ToastService.ShowError(errorMessage, "Error");
+    }
+
+    private void NavigateToPrompts()
+    {
+        Navigation.NavigateTo("/prompts");
+    }
+}

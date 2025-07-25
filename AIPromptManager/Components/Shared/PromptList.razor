@@ -1,0 +1,200 @@
+@using AIPromptManager.Models
+@using AIPromptManager.Services
+@inject IPromptService PromptService
+
+<div class="w-full">
+    @if (IsLoading)
+    {
+        <!-- Loading State -->
+        <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="ml-3 text-gray-600">Loading prompts...</span>
+        </div>
+    }
+    else if (!Prompts.Any())
+    {
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No prompts found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+                @if (!string.IsNullOrEmpty(SearchTerm))
+                {
+                    <span>No prompts match your search criteria.</span>
+                }
+                else
+                {
+                    <span>Get started by creating your first prompt.</span>
+                }
+            </p>
+            @if (string.IsNullOrEmpty(SearchTerm))
+            {
+                <div class="mt-6">
+                    <button @onclick="OnCreateNew" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Create your first prompt
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Prompts Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @foreach (var prompt in CurrentPagePrompts)
+            {
+                <PromptCard Prompt="prompt" 
+                           SearchTerm="SearchTerm"
+                           OnEdit="HandleEdit" 
+                           OnDelete="HandleDelete" 
+                           OnTagClick="HandleTagClick" />
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (TotalPages > 1)
+        {
+            <div class="mt-8 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                <div class="flex flex-1 justify-between sm:hidden">
+                    <!-- Mobile Pagination -->
+                    <button @onclick="PreviousPage" 
+                            disabled="@(CurrentPage == 1)"
+                            class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Previous
+                    </button>
+                    <button @onclick="NextPage" 
+                            disabled="@(CurrentPage == TotalPages)"
+                            class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                    </button>
+                </div>
+                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span class="font-medium">@StartIndex</span> to <span class="font-medium">@EndIndex</span> of <span class="font-medium">@TotalPrompts</span> results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <!-- Previous Button -->
+                            <button @onclick="PreviousPage" 
+                                    disabled="@(CurrentPage == 1)"
+                                    class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <!-- Page Numbers -->
+                            @for (int i = Math.Max(1, CurrentPage - 2); i <= Math.Min(TotalPages, CurrentPage + 2); i++)
+                            {
+                                int pageNum = i;
+                                <button @onclick="() => GoToPage(pageNum)" 
+                                        class="@GetPageButtonClass(pageNum)">
+                                    @pageNum
+                                </button>
+                            }
+
+                            <!-- Next Button -->
+                            <button @onclick="NextPage" 
+                                    disabled="@(CurrentPage == TotalPages)"
+                                    class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<Prompt> Prompts { get; set; } = new List<Prompt>();
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public EventCallback<Prompt> OnEdit { get; set; }
+    [Parameter] public EventCallback<Prompt> OnDelete { get; set; }
+    [Parameter] public EventCallback<string> OnTagClick { get; set; }
+    [Parameter] public EventCallback OnCreateNew { get; set; }
+    [Parameter] public int PageSize { get; set; } = 12;
+
+    private int CurrentPage = 1;
+    private int TotalPrompts => Prompts.Count();
+    private int TotalPages => (int)Math.Ceiling((double)TotalPrompts / PageSize);
+    private int StartIndex => (CurrentPage - 1) * PageSize + 1;
+    private int EndIndex => Math.Min(CurrentPage * PageSize, TotalPrompts);
+
+    private IEnumerable<Prompt> CurrentPagePrompts => 
+        Prompts.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    protected override void OnParametersSet()
+    {
+        // Reset to first page when prompts change (e.g., after search)
+        if (CurrentPage > TotalPages && TotalPages > 0)
+        {
+            CurrentPage = 1;
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (CurrentPage > 1)
+        {
+            CurrentPage--;
+        }
+    }
+
+    private void NextPage()
+    {
+        if (CurrentPage < TotalPages)
+        {
+            CurrentPage++;
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+
+    private string GetPageButtonClass(int pageNum)
+    {
+        var baseClass = "relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0";
+        
+        if (pageNum == CurrentPage)
+        {
+            return baseClass + " z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600";
+        }
+        
+        return baseClass + " text-gray-900";
+    }
+
+    private async Task HandleEdit(Prompt prompt)
+    {
+        await OnEdit.InvokeAsync(prompt);
+    }
+
+    private async Task HandleDelete(Prompt prompt)
+    {
+        await OnDelete.InvokeAsync(prompt);
+    }
+
+    private async Task HandleTagClick(string tagName)
+    {
+        await OnTagClick.InvokeAsync(tagName);
+    }
+}

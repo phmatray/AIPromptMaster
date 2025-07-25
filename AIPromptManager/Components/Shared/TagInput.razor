@@ -1,0 +1,216 @@
+@using AIPromptManager.Models
+@using AIPromptManager.Services
+@inject ITagService TagService
+
+<div class="space-y-2">
+    <label class="block text-sm font-medium text-gray-700">
+        Tags
+        @if (Required)
+        {
+            <span class="text-red-500">*</span>
+        }
+    </label>
+    
+    <!-- Selected Tags Display -->
+    @if (SelectedTags.Any())
+    {
+        <div class="flex flex-wrap gap-2 mb-2">
+            @foreach (var tag in SelectedTags)
+            {
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    @tag
+                    <button type="button" 
+                            @onclick="() => RemoveTag(tag)"
+                            class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-600 focus:outline-none focus:bg-blue-200 focus:text-blue-600"
+                            aria-label="Remove tag">
+                        <svg class="w-2 h-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                            <path stroke-linecap="round" stroke-width="1.5" d="m1 1 6 6m0-6-6 6" />
+                        </svg>
+                    </button>
+                </span>
+            }
+        </div>
+    }
+    
+    <!-- Tag Input with Autocomplete -->
+    <div class="relative">
+        <input type="text" 
+               @bind="currentInput" 
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               @onfocus="ShowSuggestions"
+               @onblur="HideSuggestions"
+               placeholder="Type to add tags..."
+               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+               aria-describedby="@(ErrorMessage != null ? "tag-error" : null)" />
+        
+        <!-- Autocomplete Suggestions -->
+        @if (showSuggestions && suggestions.Any())
+        {
+            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                @foreach (var suggestion in suggestions.Take(10))
+                {
+                    <button type="button"
+                            @onmousedown="() => SelectSuggestion(suggestion)"
+                            class="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-blue-50 focus:outline-none focus:bg-blue-50 border-b border-gray-100 last:border-b-0">
+                        @suggestion
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p id="tag-error" class="mt-1 text-sm text-red-600">@ErrorMessage</p>
+    }
+    
+    <!-- Help Text -->
+    <p class="mt-1 text-sm text-gray-500">
+        Press Enter or comma to add a tag. Click suggestions to select them.
+    </p>
+</div>
+
+@code {
+    [Parameter] public List<string> SelectedTags { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SelectedTagsChanged { get; set; }
+    [Parameter] public bool Required { get; set; } = false;
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private string currentInput = string.Empty;
+    private List<string> suggestions = new();
+    private bool showSuggestions = false;
+    private Timer? debounceTimer;
+
+    private string CurrentInput
+    {
+        get => currentInput;
+        set
+        {
+            currentInput = value;
+            DebounceGetSuggestions();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Ensure SelectedTags is not null
+        SelectedTags ??= new List<string>();
+    }
+
+    private void DebounceGetSuggestions()
+    {
+        debounceTimer?.Dispose();
+        debounceTimer = new Timer(async _ => await GetSuggestions(), null, 300, Timeout.Infinite);
+    }
+
+    private async Task GetSuggestions()
+    {
+        if (string.IsNullOrWhiteSpace(currentInput))
+        {
+            suggestions.Clear();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            var allSuggestions = await TagService.GetTagSuggestionsAsync(currentInput);
+            suggestions = allSuggestions
+                .Where(s => !SelectedTags.Contains(s, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            suggestions.Clear();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == ",")
+        {
+            await AddCurrentTag();
+        }
+        else if (e.Key == "Backspace" && string.IsNullOrEmpty(currentInput) && SelectedTags.Any())
+        {
+            // Remove last tag when backspace is pressed on empty input
+            var lastTag = SelectedTags.Last();
+            await RemoveTag(lastTag);
+        }
+        else if (e.Key == "Escape")
+        {
+            showSuggestions = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddCurrentTag()
+    {
+        var tagName = currentInput.Trim().TrimEnd(',');
+        
+        if (string.IsNullOrWhiteSpace(tagName))
+            return;
+
+        if (SelectedTags.Contains(tagName, StringComparer.OrdinalIgnoreCase))
+            return;
+
+        if (tagName.Length > 50)
+            return;
+
+        SelectedTags.Add(tagName);
+        currentInput = string.Empty;
+        suggestions.Clear();
+        showSuggestions = false;
+        
+        await SelectedTagsChanged.InvokeAsync(SelectedTags);
+        StateHasChanged();
+    }
+
+    private async Task RemoveTag(string tag)
+    {
+        SelectedTags.Remove(tag);
+        await SelectedTagsChanged.InvokeAsync(SelectedTags);
+        StateHasChanged();
+    }
+
+    private async Task SelectSuggestion(string suggestion)
+    {
+        if (!SelectedTags.Contains(suggestion, StringComparer.OrdinalIgnoreCase))
+        {
+            SelectedTags.Add(suggestion);
+            currentInput = string.Empty;
+            suggestions.Clear();
+            showSuggestions = false;
+            
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            StateHasChanged();
+        }
+    }
+
+    private void ShowSuggestions()
+    {
+        showSuggestions = true;
+        if (!string.IsNullOrWhiteSpace(currentInput))
+        {
+            _ = GetSuggestions();
+        }
+    }
+
+    private async Task HideSuggestions()
+    {
+        // Small delay to allow click events on suggestions to fire
+        await Task.Delay(150);
+        showSuggestions = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        debounceTimer?.Dispose();
+    }
+}

@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+@layer base {
+  html, body {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Button Components */
+  .btn {
+    @apply inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 text-white py-2 px-4;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-gray-200 hover:bg-gray-300 focus:ring-gray-500 text-gray-800 py-2 px-4;
+  }
+  
+  .btn-success {
+    @apply btn bg-green-600 hover:bg-green-700 focus:ring-green-500 text-white py-2 px-4;
+  }
+  
+  .btn-danger {
+    @apply btn bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white py-2 px-4;
+  }
+  
+  .btn-sm {
+    @apply py-1.5 px-3 text-sm;
+  }
+  
+  .btn-lg {
+    @apply py-3 px-6 text-lg;
+  }
+  
+  /* Form Components */
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200;
+  }
+  
+  .form-textarea {
+    @apply form-input resize-y min-h-[100px];
+  }
+  
+  .form-select {
+    @apply form-input pr-10 bg-white cursor-pointer;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  .form-error {
+    @apply border-red-500 focus:ring-red-500;
+  }
+  
+  /* Card Components */
+  .card {
+    @apply bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
+  }
+  
+  .card-body {
+    @apply px-6 py-4;
+  }
+  
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+  }
+  
+  /* Tag Components */
+  .tag {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .tag-primary {
+    @apply tag bg-primary-100 text-primary-800;
+  }
+  
+  .tag-secondary {
+    @apply tag bg-gray-100 text-gray-800;
+  }
+  
+  .tag-success {
+    @apply tag bg-green-100 text-green-800;
+  }
+  
+  .tag-warning {
+    @apply tag bg-yellow-100 text-yellow-800;
+  }
+  
+  .tag-error {
+    @apply tag bg-red-100 text-red-800;
+  }
+  
+  /* Layout Components */
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .sidebar {
+    @apply w-64 bg-white shadow-lg fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0;
+  }
+  
+  .sidebar-hidden {
+    @apply -translate-x-full;
+  }
+  
+  .main-content {
+    @apply flex-1 lg:ml-0;
+  }
+  
+  /* Responsive Grid */
+  .grid-responsive {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  /* Loading Components */
+  .loading-spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600;
+  }
+  
+  .loading-dots {
+    @apply flex space-x-1;
+  }
+  
+  .loading-dot {
+    @apply h-2 w-2 bg-primary-600 rounded-full animate-pulse;
+  }
+  
+  /* Toast/Notification Components */
+  .toast {
+    @apply fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg border border-gray-200 animate-slide-up;
+  }
+  
+  .toast-success {
+    @apply toast border-l-4 border-l-green-500;
+  }
+  
+  .toast-error {
+    @apply toast border-l-4 border-l-red-500;
+  }
+  
+  .toast-warning {
+    @apply toast border-l-4 border-l-yellow-500;
+  }
+  
+  /* Search Components */
+  .search-input {
+    @apply form-input pl-10 pr-4;
+  }
+  
+  .search-icon {
+    @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5;
+  }
+  
+  /* Mobile Navigation */
+  .mobile-nav-toggle {
+    @apply lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md border border-gray-200;
+  }
+  
+  .mobile-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden;
+  }
+}
+
+/* Legacy Blazor error handling styles */
+#blazor-error-ui {
+    @apply fixed bottom-0 left-0 w-full bg-yellow-100 border-t border-yellow-300 p-4 z-50 hidden;
+}
+
+#blazor-error-ui .dismiss {
+    @apply absolute top-2 right-4 cursor-pointer text-yellow-800 hover:text-yellow-900;
+}
+
+.blazor-error-boundary {
+    @apply bg-red-600 text-white p-4 rounded-lg;
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=);
+    background-repeat: no-repeat;
+    background-position: 1rem center;
+    background-size: 1.8rem;
+    padding-left: 3.7rem;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
+}
+
+/* Form validation styles */
+.valid.modified:not([type=checkbox]) {
+    @apply border-green-500 focus:ring-green-500;
+}
+
+.invalid {
+    @apply border-red-500 focus:ring-red-500;
+}
+
+.validation-message {
+    @apply text-red-600 text-sm mt-1;
+}

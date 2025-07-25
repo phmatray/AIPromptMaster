@@ -1,0 +1,106 @@
+@* Responsive Design Demo Component *@
+<div class="space-y-6">
+    <!-- Responsive Grid Demo -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold text-gray-900">Responsive Grid Layout</h3>
+            <p class="text-sm text-gray-600 mt-1">This grid adapts from 1 column on mobile to 4 columns on large screens</p>
+        </div>
+        <div class="card-body">
+            <div class="grid-responsive">
+                @for (int i = 1; i <= 8; i++)
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="font-medium text-gray-900">Card @i</h4>
+                            <p class="text-sm text-gray-600 mt-1">Sample content for responsive testing</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Button Variants Demo -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold text-gray-900">Button Components</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex flex-wrap gap-3">
+                <button class="btn-primary">Primary Button</button>
+                <button class="btn-secondary">Secondary Button</button>
+                <button class="btn-success">Success Button</button>
+                <button class="btn-danger">Danger Button</button>
+                <button class="btn-primary btn-sm">Small Button</button>
+                <button class="btn-primary btn-lg">Large Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Components Demo -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold text-gray-900">Form Components</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="form-label">Text Input</label>
+                    <input type="text" class="form-input" placeholder="Enter text here..." />
+                </div>
+                <div>
+                    <label class="form-label">Select Input</label>
+                    <select class="form-select">
+                        <option>Choose an option</option>
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Textarea</label>
+                    <textarea class="form-textarea" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tag Components Demo -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold text-gray-900">Tag Components</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex flex-wrap gap-2">
+                <span class="tag-primary">Primary Tag</span>
+                <span class="tag-secondary">Secondary Tag</span>
+                <span class="tag-success">Success Tag</span>
+                <span class="tag-warning">Warning Tag</span>
+                <span class="tag-error">Error Tag</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Components Demo -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold text-gray-900">Loading Components</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex items-center space-x-8">
+                <div class="text-center">
+                    <div class="loading-spinner mx-auto mb-2"></div>
+                    <p class="text-sm text-gray-600">Spinner</p>
+                </div>
+                <div class="text-center">
+                    <div class="loading-dots mb-2">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot" style="animation-delay: 0.1s;"></div>
+                        <div class="loading-dot" style="animation-delay: 0.2s;"></div>
+                    </div>
+                    <p class="text-sm text-gray-600">Dots</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
