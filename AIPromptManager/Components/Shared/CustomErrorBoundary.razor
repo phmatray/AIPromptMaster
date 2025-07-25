@@ -1,0 +1,94 @@
+@using Microsoft.AspNetCore.Components.Web
+@using AIPromptManager.Services
+@inject IToastService ToastService
+@inject ILogger<CustomErrorBoundary> Logger
+
+<Microsoft.AspNetCore.Components.Web.ErrorBoundary @ref="errorBoundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent Context="exception">
+        @{
+            if (ShowErrorToast)
+            {
+                var message = FallbackMessage ?? "An unexpected error occurred. Please try again.";
+                ToastService.ShowError(message, "Error");
+                Logger.LogError(exception, "Component error boundary triggered");
+            }
+        }
+        <div class="min-h-[200px] flex items-center justify-center p-8">
+            <div class="text-center max-w-md">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-2 justify-center">
+                    <button @onclick="Recover" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        Try Again
+                    </button>
+                    <button @onclick="RefreshPage" 
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        Refresh Page
+                    </button>
+                </div>
+                @if (ShowDetails)
+                {
+                    <div class="mt-4 p-3 bg-gray-50 rounded-md text-left">
+                        <button @onclick="ToggleDetails" 
+                                class="text-sm text-gray-600 hover:text-gray-800 font-medium mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
+                            Hide Details
+                        </button>
+                        <pre class="text-xs text-gray-600 whitespace-pre-wrap break-all">@exception.ToString()</pre>
+                    </div>
+                }
+                else
+                {
+                    <button @onclick="ToggleDetails" 
+                            class="mt-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1">
+                        Show Details
+                    </button>
+                }
+            </div>
+        </div>
+    </ErrorContent>
+</Microsoft.AspNetCore.Components.Web.ErrorBoundary>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? FallbackMessage { get; set; }
+    [Parameter] public bool ShowErrorToast { get; set; } = true;
+
+    private Microsoft.AspNetCore.Components.Web.ErrorBoundary? errorBoundary;
+    private bool ShowDetails = false;
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void Recover()
+    {
+        errorBoundary?.Recover();
+        ShowDetails = false;
+    }
+
+    private void RefreshPage()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+    private void ToggleDetails()
+    {
+        ShowDetails = !ShowDetails;
+    }
+
+    // Note: CurrentException is not accessible, so we'll handle error logging in the ErrorContent context
+}
+
+@inject NavigationManager Navigation

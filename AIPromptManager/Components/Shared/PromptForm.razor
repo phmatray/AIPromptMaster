@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using static AIPromptManager.Components.Shared.ConfirmDialog
 @inject IPromptService PromptService
+@inject IValidationService ValidationService
 
 <div class="max-w-4xl mx-auto">
     <EditForm Model="@promptModel" OnValidSubmit="@HandleValidSubmit" class="space-y-6">
@@ -96,11 +97,7 @@
                         disabled="@isSubmitting">
                     @if (isSubmitting)
                     {
-                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        @(IsEditMode ? "Updating..." : "Creating...")
+                        <LoadingSpinner Size="small" Color="white" ShowInline="true" Message="@(IsEditMode ? "Updating..." : "Creating...")" />
                     }
                     else
                     {
@@ -181,23 +178,40 @@
 
         try
         {
-            // Validate tags
-            if (selectedTags.Any(tag => tag.Length > 50))
+            // Additional client-side validation before submission
+            var sanitizedTags = ValidationService.SanitizeTags(selectedTags).ToList();
+            
+            // Validate each tag
+            foreach (var tagName in sanitizedTags)
             {
-                tagErrorMessage = "Tag names cannot exceed 50 characters";
-                return;
+                var tagValidation = ValidationService.ValidateTagName(tagName);
+                if (!tagValidation.IsValid)
+                {
+                    tagErrorMessage = $"Invalid tag '{tagName}': {string.Join("; ", tagValidation.Errors)}";
+                    return;
+                }
             }
 
             // Create or update prompt
             var prompt = new Prompt
             {
                 Id = promptModel.Id,
-                Title = promptModel.Title.Trim(),
-                Description = string.IsNullOrWhiteSpace(promptModel.Description) ? null : promptModel.Description.Trim(),
-                Content = promptModel.Content.Trim(),
-                Tags = selectedTags.Select(tagName => new Tag { Name = tagName.Trim() }).ToList(),
+                Title = ValidationService.SanitizeInput(promptModel.Title),
+                Description = string.IsNullOrWhiteSpace(promptModel.Description) ? null : ValidationService.SanitizeInput(promptModel.Description),
+                Content = ValidationService.SanitizeInput(promptModel.Content),
+                Tags = sanitizedTags.Select(tagName => new Tag { Name = tagName }).ToList(),
                 RowVersion = promptModel.RowVersion
             };
+
+            // Client-side validation of the complete prompt
+            var promptValidation = ValidationService.ValidatePrompt(prompt);
+            if (!promptValidation.IsValid)
+            {
+                var errorMessage = string.Join("; ", promptValidation.Errors);
+                tagErrorMessage = $"Validation failed: {errorMessage}";
+                await OnError.InvokeAsync(errorMessage);
+                return;
+            }
 
             Prompt savedPrompt;
             if (IsEditMode)
@@ -215,10 +229,22 @@
 
             await OnSave.InvokeAsync(savedPrompt);
         }
+        catch (ArgumentException ex)
+        {
+            // Handle validation errors specifically
+            tagErrorMessage = ex.Message;
+            await OnError.InvokeAsync(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Handle constraint violations and other operational errors
+            tagErrorMessage = ex.Message;
+            await OnError.InvokeAsync(ex.Message);
+        }
         catch (Exception ex)
         {
-            // Handle validation or save errors
-            tagErrorMessage = $"Error saving prompt: {ex.Message}";
+            // Handle unexpected errors
+            tagErrorMessage = $"Unexpected error: {ex.Message}";
             await OnError.InvokeAsync(ex.Message);
         }
         finally
@@ -280,13 +306,16 @@
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Title is required")]
-        [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+        [StringLength(200, MinimumLength = 1, ErrorMessage = "Title must be between 1 and 200 characters")]
+        [RegularExpression(@"^[^<>""'&]*$", ErrorMessage = "Title contains invalid characters")]
         public string Title { get; set; } = string.Empty;
 
         [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+        [RegularExpression(@"^[^<>""'&]*$", ErrorMessage = "Description contains invalid characters")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Content is required")]
+        [StringLength(50000, MinimumLength = 1, ErrorMessage = "Content must be between 1 and 50,000 characters")]
         public string Content { get; set; } = string.Empty;
 
         // Include RowVersion for optimistic concurrency

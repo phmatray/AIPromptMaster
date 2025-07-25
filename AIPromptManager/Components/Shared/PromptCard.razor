@@ -186,11 +186,11 @@
         var escapedText = System.Web.HttpUtility.HtmlEncode(text);
         var escapedSearchTerm = System.Web.HttpUtility.HtmlEncode(SearchTerm);
         
-        // Case-insensitive highlighting
+        // Case-insensitive highlighting with better contrast
         var highlightedText = Regex.Replace(
             escapedText,
             Regex.Escape(escapedSearchTerm),
-            match => $"<mark class=\"bg-yellow-200 text-yellow-900 px-1 rounded\">{match.Value}</mark>",
+            match => $"<mark class=\"bg-yellow-100 text-yellow-900 px-1 rounded font-medium\">{match.Value}</mark>",
             RegexOptions.IgnoreCase
         );
 

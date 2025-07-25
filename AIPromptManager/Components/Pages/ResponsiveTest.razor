@@ -1,0 +1,280 @@
+@page "/responsive-test"
+@using AIPromptManager.Components.Shared
+@rendermode InteractiveServer
+
+<PageTitle>Responsive Design Test - AI Prompt Manager</PageTitle>
+
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Responsive Design Test</h1>
+        <p class="mt-1 text-sm text-gray-600">Test the application's responsive behavior across different viewport sizes</p>
+    </div>
+
+    <!-- Test Controls -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Test Controls</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <button @onclick="() => SetViewport(375, 667)" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                📱 Mobile (375x667)
+            </button>
+            
+            <button @onclick="() => SetViewport(768, 1024)" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                📱 Tablet (768x1024)
+            </button>
+            
+            <button @onclick="() => SetViewport(1280, 720)" 
+                    class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                🖥️ Desktop (1280x720)
+            </button>
+            
+            <button @onclick="RunResponsiveTests" 
+                    class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                🧪 Run All Tests
+            </button>
+            
+            <button @onclick="ResetViewport" 
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                🔄 Reset Viewport
+            </button>
+        </div>
+
+        <!-- Current Viewport Info -->
+        <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-gray-900 mb-2">Current Viewport</h3>
+            <div class="text-sm text-gray-600">
+                <span id="viewport-info">Use browser dev tools to see current viewport size</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Results -->
+    @if (testResults.Any())
+    {
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Test Results</h2>
+            
+            <div class="space-y-4">
+                @foreach (var result in testResults)
+                {
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900">@result.ViewportName (@result.Width x @result.Height)</h3>
+                        
+                        <div class="mt-2 space-y-2">
+                            @foreach (var test in result.Tests)
+                            {
+                                <div class="flex items-start space-x-2">
+                                    <span class="text-sm">@(test.Passed ? "✅" : "❌")</span>
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium">@test.Name</span>
+                                        @if (test.Issues.Any())
+                                        {
+                                            <ul class="mt-1 text-xs text-red-600 space-y-1">
+                                                @foreach (var issue in test.Issues)
+                                                {
+                                                    <li>⚠️ @issue</li>
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Sample Content for Testing -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Sample Content</h2>
+        
+        <!-- Sample Search Bar -->
+        <div class="mb-6">
+            <SearchBar @bind-SearchTerm="sampleSearchTerm" 
+                      OnSearch="HandleSampleSearch" 
+                      OnClear="HandleSampleClear"
+                      Placeholder="Test search functionality..." />
+        </div>
+
+        <!-- Sample Prompt Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (int i = 1; i <= 6; i++)
+            {
+                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Sample Prompt @i</h3>
+                    <p class="text-sm text-gray-600 mb-4">This is a sample prompt description to test responsive layout and text wrapping behavior across different viewport sizes.</p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            tag@(i)
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            test
+                        </span>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Copy
+                        </button>
+                        <button class="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Edit
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Sample Form -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Sample Form</h2>
+        
+        <form class="space-y-4">
+            <div>
+                <label for="sample-title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="sample-title" 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       placeholder="Enter prompt title...">
+            </div>
+            
+            <div>
+                <label for="sample-description" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea id="sample-description" rows="3"
+                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Enter prompt description..."></textarea>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button type="submit" 
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Save Prompt
+                </button>
+                <button type="button" 
+                        class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@inject IJSRuntime JSRuntime
+
+@code {
+    private string sampleSearchTerm = string.Empty;
+    private List<TestResult> testResults = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("updateViewportInfo");
+        }
+    }
+
+    private async Task SetViewport(int width, int height)
+    {
+        await JSRuntime.InvokeVoidAsync("setTestViewport", width, height);
+        StateHasChanged();
+    }
+
+    private async Task ResetViewport()
+    {
+        await JSRuntime.InvokeVoidAsync("resetTestViewport");
+        StateHasChanged();
+    }
+
+    private async Task RunResponsiveTests()
+    {
+        try
+        {
+            var results = await JSRuntime.InvokeAsync<TestResult[]>("runResponsiveTests");
+            testResults = results?.ToList() ?? new List<TestResult>();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error running responsive tests: {ex.Message}");
+        }
+    }
+
+    private void HandleSampleSearch(string searchTerm)
+    {
+        sampleSearchTerm = searchTerm;
+        // This is just for testing the search component
+    }
+
+    private void HandleSampleClear()
+    {
+        sampleSearchTerm = string.Empty;
+    }
+
+    public class TestResult
+    {
+        public string ViewportName { get; set; } = string.Empty;
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public List<TestCase> Tests { get; set; } = new();
+    }
+
+    public class TestCase
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool Passed { get; set; }
+        public List<string> Issues { get; set; } = new();
+    }
+}
+
+<script>
+    window.updateViewportInfo = () => {
+        const info = document.getElementById('viewport-info');
+        if (info) {
+            info.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+        }
+    };
+
+    window.setTestViewport = (width, height) => {
+        // This would typically be handled by browser dev tools or test framework
+        // For demonstration, we'll just update the info
+        const info = document.getElementById('viewport-info');
+        if (info) {
+            info.textContent = `${width} x ${height} (simulated)`;
+        }
+        console.log(`Setting viewport to ${width}x${height}`);
+    };
+
+    window.resetTestViewport = () => {
+        window.updateViewportInfo();
+        console.log('Viewport reset to browser default');
+    };
+
+    window.runResponsiveTests = async () => {
+        if (window.ResponsiveDesignTester) {
+            const tester = new window.ResponsiveDesignTester();
+            const results = await tester.runAllTests();
+            
+            // Convert to format expected by Blazor
+            return results.map(viewport => ({
+                viewportName: viewport.viewport,
+                width: viewport.width,
+                height: viewport.height,
+                tests: viewport.tests.map(test => ({
+                    name: test.name,
+                    passed: test.passed,
+                    issues: test.issues || []
+                }))
+            }));
+        } else {
+            console.error('ResponsiveDesignTester not loaded');
+            return [];
+        }
+    };
+
+    // Update viewport info on resize
+    window.addEventListener('resize', window.updateViewportInfo);
+</script>

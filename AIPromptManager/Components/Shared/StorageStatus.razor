@@ -1,0 +1,258 @@
+@using AIPromptManager.Services
+@inject IStorageService StorageService
+@inject ILogger<StorageStatus> Logger
+
+@if (storageInfo != null)
+{
+    <div class="@GetContainerClasses()">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                @if (storageInfo.IsHealthy)
+                {
+                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                }
+                else
+                {
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                }
+            </div>
+            <div class="ml-3 flex-1">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium @GetTextClasses()">
+                        Storage: @FormatBytes(storageInfo.UsedSize) / @FormatBytes(storageInfo.TotalSize) used
+                    </p>
+                    @if (ShowDetails)
+                    {
+                        <button type="button" 
+                                @onclick="ToggleDetails"
+                                class="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
+                            @(showDetails ? "Hide" : "Show") Details
+                        </button>
+                    }
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div class="@GetProgressBarClasses() h-2 rounded-full transition-all duration-300" 
+                         style="width: @(GetUsagePercentage())%"></div>
+                </div>
+                
+                @if (storageInfo.Warnings.Any())
+                {
+                    <div class="mt-2">
+                        @foreach (var warning in storageInfo.Warnings)
+                        {
+                            <p class="text-sm text-yellow-600">⚠️ @warning</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        
+        @if (ShowDetails && showDetails)
+        {
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Prompts</dt>
+                        <dd class="text-sm text-gray-900">@storageInfo.PromptCount.ToString("N0")</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Tags</dt>
+                        <dd class="text-sm text-gray-900">@storageInfo.TagCount.ToString("N0")</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Available Space</dt>
+                        <dd class="text-sm text-gray-900">@FormatBytes(storageInfo.AvailableSize)</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Last Checked</dt>
+                        <dd class="text-sm text-gray-900">@storageInfo.LastChecked.ToString("HH:mm:ss")</dd>
+                    </div>
+                </dl>
+                
+                @if (ShowCleanupButton && !storageInfo.IsHealthy)
+                {
+                    <div class="mt-4 flex space-x-3">
+                        <button type="button"
+                                @onclick="CleanupUnusedTags"
+                                disabled="@isCleaningUp"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                            @if (isCleaningUp)
+                            {
+                                <LoadingSpinner Size="small" ShowInline="true" />
+                                <span class="ml-2">Cleaning...</span>
+                            }
+                            else
+                            {
+                                <span>Cleanup Unused Tags</span>
+                            }
+                        </button>
+                        
+                        <button type="button"
+                                @onclick="RefreshStorageInfo"
+                                disabled="@isRefreshing"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                            @if (isRefreshing)
+                            {
+                                <LoadingSpinner Size="small" ShowInline="true" />
+                                <span class="ml-2">Refreshing...</span>
+                            }
+                            else
+                            {
+                                <span>Refresh</span>
+                            }
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowDetails { get; set; } = true;
+    [Parameter] public bool ShowCleanupButton { get; set; } = true;
+    [Parameter] public bool AutoRefresh { get; set; } = false;
+    [Parameter] public int RefreshIntervalSeconds { get; set; } = 30;
+    [Parameter] public EventCallback<string> OnError { get; set; }
+    [Parameter] public EventCallback<string> OnSuccess { get; set; }
+
+    private StorageInfo? storageInfo;
+    private bool showDetails = false;
+    private bool isCleaningUp = false;
+    private bool isRefreshing = false;
+    private Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStorageInfo();
+        
+        if (AutoRefresh && RefreshIntervalSeconds > 0)
+        {
+            refreshTimer = new Timer(async _ => await RefreshStorageInfo(), null, 
+                TimeSpan.FromSeconds(RefreshIntervalSeconds), 
+                TimeSpan.FromSeconds(RefreshIntervalSeconds));
+        }
+    }
+
+    private async Task RefreshStorageInfo()
+    {
+        try
+        {
+            isRefreshing = true;
+            StateHasChanged();
+            
+            storageInfo = await StorageService.GetStorageInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error refreshing storage info");
+            await OnError.InvokeAsync("Failed to refresh storage information");
+        }
+        finally
+        {
+            isRefreshing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CleanupUnusedTags()
+    {
+        try
+        {
+            isCleaningUp = true;
+            StateHasChanged();
+            
+            var result = await StorageService.CleanupUnusedTagsAsync();
+            
+            if (result.Success)
+            {
+                await OnSuccess.InvokeAsync($"Cleanup completed: {result.ItemsRemoved} items removed, {FormatBytes(result.SpaceFreed)} freed");
+                await RefreshStorageInfo();
+            }
+            else
+            {
+                var errorMessage = string.Join("; ", result.Errors);
+                await OnError.InvokeAsync($"Cleanup failed: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during cleanup");
+            await OnError.InvokeAsync("Cleanup operation failed");
+        }
+        finally
+        {
+            isCleaningUp = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleDetails()
+    {
+        showDetails = !showDetails;
+    }
+
+    private string GetContainerClasses()
+    {
+        if (storageInfo?.IsHealthy == true)
+            return "rounded-md bg-green-50 p-4";
+        else
+            return "rounded-md bg-yellow-50 p-4";
+    }
+
+    private string GetTextClasses()
+    {
+        if (storageInfo?.IsHealthy == true)
+            return "text-green-800";
+        else
+            return "text-yellow-800";
+    }
+
+    private string GetProgressBarClasses()
+    {
+        var percentage = GetUsagePercentage();
+        
+        if (percentage >= 95)
+            return "bg-red-600";
+        else if (percentage >= 80)
+            return "bg-yellow-500";
+        else
+            return "bg-green-500";
+    }
+
+    private double GetUsagePercentage()
+    {
+        if (storageInfo == null || storageInfo.TotalSize == 0)
+            return 0;
+            
+        return Math.Min(100, (double)storageInfo.UsedSize / storageInfo.TotalSize * 100);
+    }
+
+    private string FormatBytes(long bytes)
+    {
+        if (bytes == 0) return "0 B";
+        
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes;
+        
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+        
+        return $"{size:0.##} {sizes[order]}";
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}

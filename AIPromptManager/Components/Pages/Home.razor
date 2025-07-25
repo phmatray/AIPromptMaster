@@ -1,10 +1,17 @@
 ﻿@page "/"
+@using AIPromptManager.Components.Shared
 
 <PageTitle>AI Prompt Manager</PageTitle>
 
 <div class="space-y-8">
+    <!-- Storage Status -->
+    <StorageStatus ShowDetails="false" 
+                   AutoRefresh="true" 
+                   RefreshIntervalSeconds="60"
+                   OnError="HandleStorageError"
+                   OnSuccess="HandleStorageSuccess" />
     <!-- Hero Section -->
-    <div class="text-center">
+    <header class="text-center" role="banner">
         <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl">
             AI Prompt Manager
         </h1>
@@ -12,81 +19,90 @@
             Organize, manage, and access your AI prompts in one centralized location. 
             Create, categorize, and search through your prompt collection with ease.
         </p>
-    </div>
+    </header>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                        </svg>
+    <section aria-labelledby="quick-actions-heading">
+        <h2 id="quick-actions-heading" class="sr-only">Quick Actions</h2>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0" aria-hidden="true">
+                            <svg class="h-8 w-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Create Prompt</h3>
+                            <p class="text-sm text-gray-500">Add a new AI prompt to your collection</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-medium text-gray-900">Create Prompt</h3>
-                        <p class="text-sm text-gray-500">Add a new AI prompt to your collection</p>
+                    <div class="mt-4">
+                        <a href="/create" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                           aria-label="Create a new prompt">
+                            Get Started
+                        </a>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <a href="/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Get Started
-                    </a>
-                </div>
-            </div>
-        </div>
+            </article>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-green-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 2a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
-                        </svg>
+            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0" aria-hidden="true">
+                            <svg class="h-8 w-8 text-green-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 2a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Browse Prompts</h3>
+                            <p class="text-sm text-gray-500">View and manage your existing prompts</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-medium text-gray-900">Browse Prompts</h3>
-                        <p class="text-sm text-gray-500">View and manage your existing prompts</p>
+                    <div class="mt-4">
+                        <a href="/prompts" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                           aria-label="Browse existing prompts">
+                            View All
+                        </a>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <a href="/prompts" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        View All
-                    </a>
-                </div>
-            </div>
-        </div>
+            </article>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                        </svg>
+            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0" aria-hidden="true">
+                            <svg class="h-8 w-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Search Prompts</h3>
+                            <p class="text-sm text-gray-500">Find specific prompts quickly</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-medium text-gray-900">Search Prompts</h3>
-                        <p class="text-sm text-gray-500">Find specific prompts quickly</p>
+                    <div class="mt-4">
+                        <a href="/search" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                           aria-label="Search through prompts">
+                            Search
+                        </a>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <a href="/search" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                        Search
-                    </a>
-                </div>
-            </div>
+            </article>
         </div>
-    </div>
+    </section>
 
     <!-- Features Section -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Key Features</h2>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
+    <section class="bg-white shadow rounded-lg p-6" aria-labelledby="features-heading">
+        <h2 id="features-heading" class="text-2xl font-bold text-gray-900 mb-6">Key Features</h2>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
+            <article class="flex items-start" role="listitem">
+                <div class="flex-shrink-0" aria-hidden="true">
                     <div class="flex items-center justify-center h-10 w-10 rounded-md bg-blue-500 text-white">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a1.994 1.994 0 01-1.414.586H7a4 4 0 01-4-4V7a4 4 0 014-4z" />
@@ -97,10 +113,10 @@
                     <h3 class="text-lg font-medium text-gray-900">Organize with Tags</h3>
                     <p class="text-sm text-gray-500">Categorize your prompts with custom tags for easy organization and filtering.</p>
                 </div>
-            </div>
+            </article>
 
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
+            <article class="flex items-start" role="listitem">
+                <div class="flex-shrink-0" aria-hidden="true">
                     <div class="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -111,10 +127,10 @@
                     <h3 class="text-lg font-medium text-gray-900">Quick Copy</h3>
                     <p class="text-sm text-gray-500">Copy prompts to your clipboard with a single click for immediate use.</p>
                 </div>
-            </div>
+            </article>
 
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
+            <article class="flex items-start" role="listitem">
+                <div class="flex-shrink-0" aria-hidden="true">
                     <div class="flex items-center justify-center h-10 w-10 rounded-md bg-purple-500 text-white">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -125,10 +141,10 @@
                     <h3 class="text-lg font-medium text-gray-900">Powerful Search</h3>
                     <p class="text-sm text-gray-500">Search through titles, descriptions, content, and tags to find exactly what you need.</p>
                 </div>
-            </div>
+            </article>
 
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
+            <article class="flex items-start" role="listitem">
+                <div class="flex-shrink-0" aria-hidden="true">
                     <div class="flex items-center justify-center h-10 w-10 rounded-md bg-orange-500 text-white">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -139,7 +155,22 @@
                     <h3 class="text-lg font-medium text-gray-900">Responsive Design</h3>
                     <p class="text-sm text-gray-500">Access your prompts from any device with a fully responsive interface.</p>
                 </div>
-            </div>
+            </article>
         </div>
-    </div>
+    </section>
 </div>
+
+@code {
+    private void HandleStorageError(string error)
+    {
+        // Handle storage errors - could show toast notification
+        // For now, just log the error
+        Console.WriteLine($"Storage error: {error}");
+    }
+
+    private void HandleStorageSuccess(string message)
+    {
+        // Handle storage success messages
+        Console.WriteLine($"Storage success: {message}");
+    }
+}

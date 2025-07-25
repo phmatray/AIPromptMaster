@@ -206,6 +206,168 @@
     content: "An error has occurred.";
 }
 
+/* Accessibility styles */
+.sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+    clip: rect(0, 0, 0, 0);
+}
+
+.focus\:not-sr-only:focus {
+    @apply static w-auto h-auto p-0 m-0 overflow-visible whitespace-normal;
+    clip: auto;
+}
+
+/* Skip link styles */
+.skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md focus:shadow-lg;
+}
+
+/* Enhanced focus indicators for better visibility */
+*:focus {
+    outline: 2px solid #3b82f6 !important; /* Blue-500 */
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Button focus states with better contrast */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    outline: 2px solid #1d4ed8 !important; /* Blue-700 for better contrast */
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.15) !important;
+}
+
+/* Error state focus indicators */
+.invalid:focus,
+.form-error:focus {
+    outline: 2px solid #dc2626 !important; /* Red-600 */
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Success state focus indicators */
+.valid:focus {
+    outline: 2px solid #059669 !important; /* Emerald-600 */
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.15) !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    *:focus {
+        outline: 3px solid currentColor !important;
+        outline-offset: 2px !important;
+        box-shadow: none !important;
+    }
+    
+    /* Ensure text has sufficient contrast in high contrast mode */
+    .text-gray-500 {
+        color: #374151 !important; /* Gray-700 for better contrast */
+    }
+    
+    .text-gray-400 {
+        color: #4b5563 !important; /* Gray-600 for better contrast */
+    }
+    
+    /* Button contrast improvements */
+    .bg-blue-100 {
+        background-color: #dbeafe !important; /* Blue-100 */
+        color: #1e40af !important; /* Blue-800 for better contrast */
+    }
+    
+    .bg-green-100 {
+        background-color: #dcfce7 !important; /* Green-100 */
+        color: #166534 !important; /* Green-800 for better contrast */
+    }
+    
+    .bg-red-100 {
+        background-color: #fee2e2 !important; /* Red-100 */
+        color: #991b1b !important; /* Red-800 for better contrast */
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dark mode support for better accessibility */
+@media (prefers-color-scheme: dark) {
+    /* This would be implemented if dark mode was required */
+    /* For now, we maintain light mode with good contrast */
+}
+
+/* Improved color contrast for interactive elements */
+.hover\:bg-blue-50:hover {
+    background-color: #eff6ff !important;
+    color: #1e40af !important; /* Ensure text remains readable */
+}
+
+.hover\:bg-gray-50:hover {
+    background-color: #f9fafb !important;
+    color: #111827 !important; /* Ensure text remains readable */
+}
+
+/* Better contrast for disabled states */
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    color: #6b7280 !important; /* Gray-500 for better readability than default disabled */
+}
+
+/* Ensure sufficient contrast for placeholder text */
+::placeholder {
+    color: #6b7280 !important; /* Gray-500 for better contrast than default */
+    opacity: 1 !important;
+}
+
+/* Better contrast for form validation messages */
+.validation-message {
+    color: #dc2626 !important; /* Red-600 for better contrast */
+    font-weight: 500 !important;
+}
+
+/* Improved link contrast */
+a {
+    color: #1d4ed8 !important; /* Blue-700 for better contrast */
+}
+
+a:hover {
+    color: #1e40af !important; /* Blue-800 for even better contrast on hover */
+}
+
+/* Better contrast for tag elements */
+.tag-primary {
+    background-color: #dbeafe !important; /* Blue-100 */
+    color: #1e40af !important; /* Blue-800 for better contrast */
+}
+
+.tag-secondary {
+    background-color: #f3f4f6 !important; /* Gray-100 */
+    color: #374151 !important; /* Gray-700 for better contrast */
+}
+
+/* Ensure search highlighting has good contrast */
+mark {
+    background-color: #fef3c7 !important; /* Yellow-100 */
+    color: #92400e !important; /* Yellow-800 for better contrast */
+    padding: 0.125rem 0.25rem !important;
+    border-radius: 0.25rem !important;
+}
+
 /* Form validation styles */
 .valid.modified:not([type=checkbox]) {
     @apply border-green-500 focus:ring-green-500;

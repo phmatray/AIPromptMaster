@@ -1,5 +1,6 @@
 using AIPromptManager.Components;
 using AIPromptManager.Data;
+using AIPromptManager.Middleware;
 using AIPromptManager.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,9 +15,15 @@ builder.Services.AddDbContext<PromptManagerContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services
+builder.Services.AddScoped<IValidationService, ValidationService>();
+builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IToastService, ToastService>();
+builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+
+// Add background services
+builder.Services.AddHostedService<StorageCleanupService>();
 
 var app = builder.Build();
 
@@ -34,6 +41,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Add global exception handling middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

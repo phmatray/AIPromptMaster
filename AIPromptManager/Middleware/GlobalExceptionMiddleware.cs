@@ -1,0 +1,126 @@
+using System.Net;
+using System.Text.Json;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
+namespace AIPromptManager.Middleware;
+
+public class GlobalExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger;
+
+    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unhandled exception occurred");
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        
+        var response = new ErrorResponse();
+
+        switch (exception)
+        {
+            case SqliteException sqliteEx:
+                response.Message = "Database operation failed. Please try again.";
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                response.Details = GetDatabaseErrorDetails(sqliteEx);
+                break;
+                
+            case DbUpdateConcurrencyException concurrencyEx:
+                response.Message = "The record was modified by another user. Please refresh and try again.";
+                response.StatusCode = (int)HttpStatusCode.Conflict;
+                response.Details = "Concurrency conflict detected";
+                break;
+                
+            case DbUpdateException dbEx:
+                response.Message = "Failed to save changes. Please check your input and try again.";
+                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                response.Details = GetDatabaseErrorDetails(dbEx);
+                break;
+                
+            case ArgumentException argEx:
+                response.Message = "Invalid input provided.";
+                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                response.Details = argEx.Message;
+                break;
+                
+            case InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("storage", StringComparison.OrdinalIgnoreCase):
+                response.Message = "Storage operation failed.";
+                response.StatusCode = (int)HttpStatusCode.InsufficientStorage;
+                response.Details = invalidOpEx.Message;
+                break;
+                
+            case InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("full", StringComparison.OrdinalIgnoreCase):
+                response.Message = "Storage is full. Please delete some items or contact support.";
+                response.StatusCode = (int)HttpStatusCode.InsufficientStorage;
+                response.Details = invalidOpEx.Message;
+                break;
+                
+            case InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("unavailable", StringComparison.OrdinalIgnoreCase):
+                response.Message = "Service is temporarily unavailable. Please try again later.";
+                response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                response.Details = invalidOpEx.Message;
+                break;
+                
+            case UnauthorizedAccessException:
+                response.Message = "Access denied.";
+                response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                break;
+                
+            case TimeoutException:
+                response.Message = "The operation timed out. Please try again.";
+                response.StatusCode = (int)HttpStatusCode.RequestTimeout;
+                break;
+                
+            default:
+                response.Message = "An unexpected error occurred. Please try again later.";
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                break;
+        }
+
+        context.Response.StatusCode = response.StatusCode;
+
+        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await context.Response.WriteAsync(jsonResponse);
+    }
+
+    private static string GetDatabaseErrorDetails(Exception exception)
+    {
+        return exception switch
+        {
+            SqliteException sqliteEx when sqliteEx.SqliteErrorCode == 19 => "A record with this information already exists.",
+            SqliteException sqliteEx when sqliteEx.SqliteErrorCode == 1 => "Database operation failed due to SQL error.",
+            DbUpdateException dbEx when dbEx.InnerException is SqliteException innerSqlite && innerSqlite.SqliteErrorCode == 19 => "A record with this information already exists.",
+            _ => "Database operation failed."
+        };
+    }
+
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public int StatusCode { get; set; }
+        public string? Details { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    }
+}
