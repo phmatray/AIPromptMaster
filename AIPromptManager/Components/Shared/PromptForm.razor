@@ -6,7 +6,7 @@
 @inject IValidationService ValidationService
 
 <div class="max-w-4xl mx-auto">
-    <EditForm Model="@promptModel" OnValidSubmit="@HandleValidSubmit" class="space-y-6">
+    <EditForm Model="@_promptModel" OnValidSubmit="@HandleValidSubmit" class="space-y-6">
         <DataAnnotationsValidator />
         
         <!-- Form Header -->
@@ -27,12 +27,12 @@
                     Title <span class="text-red-500">*</span>
                 </label>
                 <InputText id="title" 
-                          @bind-Value="promptModel.Title" 
+                          @bind-Value="_promptModel.Title" 
                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           placeholder="Enter a descriptive title for your prompt"
                           maxlength="200" />
-                <ValidationMessage For="@(() => promptModel.Title)" class="text-sm text-red-600" />
-                <p class="text-xs text-gray-500">@(promptModel.Title?.Length ?? 0)/200 characters</p>
+                <ValidationMessage For="@(() => _promptModel.Title)" class="text-sm text-red-600" />
+                <p class="text-xs text-gray-500">@(_promptModel.Title.Length)/200 characters</p>
             </div>
 
             <!-- Description Field -->
@@ -41,13 +41,13 @@
                     Description
                 </label>
                 <InputTextArea id="description" 
-                              @bind-Value="promptModel.Description" 
+                              @bind-Value="_promptModel.Description" 
                               rows="3"
                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-vertical"
                               placeholder="Optional description to help you remember what this prompt is for"
                               maxlength="500" />
-                <ValidationMessage For="@(() => promptModel.Description)" class="text-sm text-red-600" />
-                <p class="text-xs text-gray-500">@(promptModel.Description?.Length ?? 0)/500 characters</p>
+                <ValidationMessage For="@(() => _promptModel.Description)" class="text-sm text-red-600" />
+                <p class="text-xs text-gray-500">@(_promptModel.Description?.Length ?? 0)/500 characters</p>
             </div>
 
             <!-- Content Field -->
@@ -56,19 +56,19 @@
                     Prompt Content <span class="text-red-500">*</span>
                 </label>
                 <InputTextArea id="content" 
-                              @bind-Value="promptModel.Content" 
+                              @bind-Value="_promptModel.Content" 
                               rows="8"
                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-sm resize-vertical"
                               placeholder="Enter your AI prompt here..." />
-                <ValidationMessage For="@(() => promptModel.Content)" class="text-sm text-red-600" />
+                <ValidationMessage For="@(() => _promptModel.Content)" class="text-sm text-red-600" />
                 <p class="text-xs text-gray-500">
                     This is the actual prompt text that will be copied to your clipboard.
                 </p>
             </div>
 
             <!-- Tags Field -->
-            <TagInput @bind-SelectedTags="selectedTags" 
-                     ErrorMessage="@tagErrorMessage" />
+            <TagInput @bind-SelectedTags="_selectedTags" 
+                     ErrorMessage="@_tagErrorMessage" />
         </div>
 
         <!-- Form Actions -->
@@ -87,15 +87,15 @@
                     <button type="button" 
                             @onclick="ShowDeleteConfirmation"
                             class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-                            disabled="@(isSubmitting || isDeletingPrompt)">
+                            disabled="@(_isSubmitting || _isDeletingPrompt)">
                         Delete
                     </button>
                 }
                 
                 <button type="submit" 
                         class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                        disabled="@isSubmitting">
-                    @if (isSubmitting)
+                        disabled="@_isSubmitting">
+                    @if (_isSubmitting)
                     {
                         <LoadingSpinner Size="small" Color="white" ShowInline="true" Message="@(IsEditMode ? "Updating..." : "Creating...")" />
                     }
@@ -112,14 +112,14 @@
     </EditForm>
 
     <!-- Delete Confirmation Dialog -->
-    <ConfirmDialog IsVisible="showDeleteConfirmation"
+    <ConfirmDialog IsVisible="_showDeleteConfirmation"
                    Title="Delete Prompt"
                    Message="@GetDeleteConfirmationMessage()"
                    ConfirmText="Delete"
                    CancelText="Cancel"
                    ProcessingText="Deleting..."
                    Type="ConfirmDialogType.Danger"
-                   IsProcessing="isDeletingPrompt"
+                   IsProcessing="_isDeletingPrompt"
                    CloseOnBackdropClick="true"
                    OnConfirm="ConfirmDelete"
                    OnCancel="CancelDelete" />
@@ -132,14 +132,14 @@
     [Parameter] public EventCallback<Prompt> OnDelete { get; set; }
     [Parameter] public EventCallback<string> OnError { get; set; }
 
-    private PromptFormModel promptModel = new();
-    private List<string> selectedTags = new();
-    private string? tagErrorMessage;
-    private bool isSubmitting = false;
+    private PromptFormModel _promptModel = new();
+    private List<string> _selectedTags = new();
+    private string? _tagErrorMessage;
+    private bool _isSubmitting;
     
     // Delete confirmation state
-    private bool showDeleteConfirmation = false;
-    private bool isDeletingPrompt = false;
+    private bool _showDeleteConfirmation;
+    private bool _isDeletingPrompt;
 
     public bool IsEditMode => ExistingPrompt != null;
 
@@ -148,7 +148,7 @@
         if (ExistingPrompt != null)
         {
             // Populate form with existing prompt data
-            promptModel = new PromptFormModel
+            _promptModel = new PromptFormModel
             {
                 Id = ExistingPrompt.Id,
                 Title = ExistingPrompt.Title,
@@ -157,29 +157,29 @@
                 RowVersion = ExistingPrompt.RowVersion
             };
             
-            selectedTags = ExistingPrompt.Tags.Select(t => t.Name).ToList();
+            _selectedTags = ExistingPrompt.Tags.Select(t => t.Name).ToList();
         }
         else
         {
             // Reset form for new prompt
-            promptModel = new PromptFormModel();
-            selectedTags = new List<string>();
+            _promptModel = new PromptFormModel();
+            _selectedTags = new List<string>();
         }
         
-        tagErrorMessage = null;
+        _tagErrorMessage = null;
     }
 
     private async Task HandleValidSubmit()
     {
-        if (isSubmitting) return;
+        if (_isSubmitting) return;
 
-        isSubmitting = true;
-        tagErrorMessage = null;
+        _isSubmitting = true;
+        _tagErrorMessage = null;
 
         try
         {
             // Additional client-side validation before submission
-            var sanitizedTags = ValidationService.SanitizeTags(selectedTags).ToList();
+            var sanitizedTags = ValidationService.SanitizeTags(_selectedTags).ToList();
             
             // Validate each tag
             foreach (var tagName in sanitizedTags)
@@ -187,7 +187,7 @@
                 var tagValidation = ValidationService.ValidateTagName(tagName);
                 if (!tagValidation.IsValid)
                 {
-                    tagErrorMessage = $"Invalid tag '{tagName}': {string.Join("; ", tagValidation.Errors)}";
+                    _tagErrorMessage = $"Invalid tag '{tagName}': {string.Join("; ", tagValidation.Errors)}";
                     return;
                 }
             }
@@ -195,12 +195,12 @@
             // Create or update prompt
             var prompt = new Prompt
             {
-                Id = promptModel.Id,
-                Title = ValidationService.SanitizeInput(promptModel.Title),
-                Description = string.IsNullOrWhiteSpace(promptModel.Description) ? null : ValidationService.SanitizeInput(promptModel.Description),
-                Content = ValidationService.SanitizeInput(promptModel.Content),
+                Id = _promptModel.Id,
+                Title = ValidationService.SanitizeInput(_promptModel.Title),
+                Description = string.IsNullOrWhiteSpace(_promptModel.Description) ? null : ValidationService.SanitizeInput(_promptModel.Description),
+                Content = ValidationService.SanitizeInput(_promptModel.Content),
                 Tags = sanitizedTags.Select(tagName => new Tag { Name = tagName }).ToList(),
-                RowVersion = promptModel.RowVersion
+                RowVersion = _promptModel.RowVersion
             };
 
             // Client-side validation of the complete prompt
@@ -208,7 +208,7 @@
             if (!promptValidation.IsValid)
             {
                 var errorMessage = string.Join("; ", promptValidation.Errors);
-                tagErrorMessage = $"Validation failed: {errorMessage}";
+                _tagErrorMessage = $"Validation failed: {errorMessage}";
                 await OnError.InvokeAsync(errorMessage);
                 return;
             }
@@ -232,24 +232,24 @@
         catch (ArgumentException ex)
         {
             // Handle validation errors specifically
-            tagErrorMessage = ex.Message;
+            _tagErrorMessage = ex.Message;
             await OnError.InvokeAsync(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             // Handle constraint violations and other operational errors
-            tagErrorMessage = ex.Message;
+            _tagErrorMessage = ex.Message;
             await OnError.InvokeAsync(ex.Message);
         }
         catch (Exception ex)
         {
             // Handle unexpected errors
-            tagErrorMessage = $"Unexpected error: {ex.Message}";
+            _tagErrorMessage = $"Unexpected error: {ex.Message}";
             await OnError.InvokeAsync(ex.Message);
         }
         finally
         {
-            isSubmitting = false;
+            _isSubmitting = false;
             StateHasChanged();
         }
     }
@@ -261,13 +261,13 @@
 
     private void ShowDeleteConfirmation()
     {
-        showDeleteConfirmation = true;
+        _showDeleteConfirmation = true;
         StateHasChanged();
     }
 
     private void CancelDelete()
     {
-        showDeleteConfirmation = false;
+        _showDeleteConfirmation = false;
         StateHasChanged();
     }
 
@@ -277,7 +277,7 @@
 
         try
         {
-            isDeletingPrompt = true;
+            _isDeletingPrompt = true;
             StateHasChanged();
 
             await OnDelete.InvokeAsync(ExistingPrompt);
@@ -288,8 +288,8 @@
         }
         finally
         {
-            isDeletingPrompt = false;
-            showDeleteConfirmation = false;
+            _isDeletingPrompt = false;
+            _showDeleteConfirmation = false;
             StateHasChanged();
         }
     }

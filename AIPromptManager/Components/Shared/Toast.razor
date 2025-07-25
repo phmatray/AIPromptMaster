@@ -60,21 +60,21 @@
     [Parameter] public EventCallback OnHide { get; set; }
     [Parameter] public int AutoHideDelayMs { get; set; } = 5000;
 
-    private Timer? autoHideTimer;
+    private Timer? _autoHideTimer;
 
     protected override void OnParametersSet()
     {
         if (IsVisible && AutoHideDelayMs > 0)
         {
-            autoHideTimer?.Dispose();
-            autoHideTimer = new Timer(async _ => await AutoHide(), null, AutoHideDelayMs, Timeout.Infinite);
+            _autoHideTimer?.Dispose();
+            _autoHideTimer = new Timer(async _ => await AutoHide(), null, AutoHideDelayMs, Timeout.Infinite);
         }
     }
 
     private async Task Hide()
     {
         IsVisible = false;
-        autoHideTimer?.Dispose();
+        _autoHideTimer?.Dispose();
         await OnHide.InvokeAsync();
         StateHasChanged();
     }
@@ -130,7 +130,7 @@
 
     public void Dispose()
     {
-        autoHideTimer?.Dispose();
+        _autoHideTimer?.Dispose();
     }
 
     public enum ToastType

@@ -10,7 +10,7 @@
             </svg>
         </div>
         
-        <input @bind="searchText" 
+        <input @bind="SearchText" 
                @bind:event="oninput"
                @onkeydown="HandleKeyDown"
                type="text" 
@@ -45,7 +45,7 @@
             <LoadingSpinner Size="small" ShowInline="true" Message="Searching..." />
         </div>
     }
-    else if (!string.IsNullOrEmpty(CurrentSearchTerm) && SearchResultCount == 0)
+    else if (!string.IsNullOrEmpty(_currentSearchTerm) && SearchResultCount == 0)
     {
         <div class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-3 z-10">
             <div class="text-sm text-gray-600">
@@ -53,7 +53,7 @@
                     <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    No results found for "<span class="font-medium">@CurrentSearchTerm</span>"
+                    No results found for "<span class="font-medium">@_currentSearchTerm</span>"
                 </div>
                 <div class="mt-1 text-xs text-gray-500">
                     Try adjusting your search terms or browse all prompts
@@ -61,10 +61,10 @@
             </div>
         </div>
     }
-    else if (!string.IsNullOrEmpty(CurrentSearchTerm) && SearchResultCount > 0)
+    else if (!string.IsNullOrEmpty(_currentSearchTerm) && SearchResultCount > 0)
     {
         <div class="mt-2 text-sm text-gray-600" role="status" aria-live="polite">
-            Found @SearchResultCount @(SearchResultCount == 1 ? "prompt" : "prompts") matching "<span class="font-medium">@CurrentSearchTerm</span>"
+            Found @SearchResultCount @(SearchResultCount == 1 ? "prompt" : "prompts") matching "<span class="font-medium">@_currentSearchTerm</span>"
         </div>
     }
     
@@ -79,16 +79,16 @@
     [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
     [Parameter] public EventCallback<string> OnSearch { get; set; }
     [Parameter] public EventCallback OnClear { get; set; }
-    [Parameter] public bool IsSearching { get; set; } = false;
-    [Parameter] public int SearchResultCount { get; set; } = 0;
+    [Parameter] public bool IsSearching { get; set; }
+    [Parameter] public int SearchResultCount { get; set; }
     [Parameter] public int DebounceDelay { get; set; } = 300; // milliseconds
     [Parameter] public string Placeholder { get; set; } = "Search prompts by title, description, or content...";
 
     private string _searchText = string.Empty;
-    private string CurrentSearchTerm = string.Empty;
-    private Timer? debounceTimer;
+    private string _currentSearchTerm = string.Empty;
+    private Timer? _debounceTimer;
 
-    private string searchText
+    private string SearchText
     {
         get => _searchText;
         set
@@ -106,21 +106,21 @@
         if (_searchText != SearchTerm)
         {
             _searchText = SearchTerm;
-            CurrentSearchTerm = SearchTerm;
+            _currentSearchTerm = SearchTerm;
         }
     }
 
     protected override void OnInitialized()
     {
-        debounceTimer = new Timer(DebounceDelay);
-        debounceTimer.Elapsed += OnDebounceTimerElapsed;
-        debounceTimer.AutoReset = false;
+        _debounceTimer = new Timer(DebounceDelay);
+        _debounceTimer.Elapsed += OnDebounceTimerElapsed;
+        _debounceTimer.AutoReset = false;
     }
 
     private void DebounceSearch()
     {
-        debounceTimer?.Stop();
-        debounceTimer?.Start();
+        _debounceTimer?.Stop();
+        _debounceTimer?.Start();
     }
 
     private async void OnDebounceTimerElapsed(object? sender, ElapsedEventArgs e)
@@ -129,9 +129,9 @@
         {
             var trimmedSearch = _searchText.Trim();
             
-            if (trimmedSearch != CurrentSearchTerm)
+            if (trimmedSearch != _currentSearchTerm)
             {
-                CurrentSearchTerm = trimmedSearch;
+                _currentSearchTerm = trimmedSearch;
                 await SearchTermChanged.InvokeAsync(trimmedSearch);
                 
                 if (string.IsNullOrEmpty(trimmedSearch))
@@ -151,8 +151,8 @@
     private async Task ClearSearch()
     {
         _searchText = string.Empty;
-        CurrentSearchTerm = string.Empty;
-        debounceTimer?.Stop();
+        _currentSearchTerm = string.Empty;
+        _debounceTimer?.Stop();
         await SearchTermChanged.InvokeAsync(string.Empty);
         await OnClear.InvokeAsync();
         StateHasChanged();
@@ -167,12 +167,12 @@
         else if (e.Key == "Enter")
         {
             // Trigger immediate search on Enter
-            debounceTimer?.Stop();
+            _debounceTimer?.Stop();
             var trimmedSearch = _searchText.Trim();
             
-            if (trimmedSearch != CurrentSearchTerm)
+            if (trimmedSearch != _currentSearchTerm)
             {
-                CurrentSearchTerm = trimmedSearch;
+                _currentSearchTerm = trimmedSearch;
                 await SearchTermChanged.InvokeAsync(trimmedSearch);
                 
                 if (string.IsNullOrEmpty(trimmedSearch))
@@ -191,6 +191,6 @@
 
     public void Dispose()
     {
-        debounceTimer?.Dispose();
+        _debounceTimer?.Dispose();
     }
 }

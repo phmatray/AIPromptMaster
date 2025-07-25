@@ -51,13 +51,13 @@
     </div>
 
     <!-- Test Results -->
-    @if (testResults.Any())
+    @if (_testResults.Any())
     {
         <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-lg font-medium text-gray-900 mb-4">Test Results</h2>
             
             <div class="space-y-4">
-                @foreach (var result in testResults)
+                @foreach (var result in _testResults)
                 {
                     <div class="border rounded-lg p-4">
                         <h3 class="font-medium text-gray-900">@result.ViewportName (@result.Width x @result.Height)</h3>
@@ -94,7 +94,7 @@
         
         <!-- Sample Search Bar -->
         <div class="mb-6">
-            <SearchBar @bind-SearchTerm="sampleSearchTerm" 
+            <SearchBar @bind-SearchTerm="_sampleSearchTerm" 
                       OnSearch="HandleSampleSearch" 
                       OnClear="HandleSampleClear"
                       Placeholder="Test search functionality..." />
@@ -166,8 +166,8 @@
 @inject IJSRuntime JSRuntime
 
 @code {
-    private string sampleSearchTerm = string.Empty;
-    private List<TestResult> testResults = new();
+    private string _sampleSearchTerm = string.Empty;
+    private List<TestResult> _testResults = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -194,7 +194,7 @@
         try
         {
             var results = await JSRuntime.InvokeAsync<TestResult[]>("runResponsiveTests");
-            testResults = results?.ToList() ?? new List<TestResult>();
+            _testResults = results?.ToList() ?? new List<TestResult>();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -205,13 +205,13 @@
 
     private void HandleSampleSearch(string searchTerm)
     {
-        sampleSearchTerm = searchTerm;
+        _sampleSearchTerm = searchTerm;
         // This is just for testing the search component
     }
 
     private void HandleSampleClear()
     {
-        sampleSearchTerm = string.Empty;
+        _sampleSearchTerm = string.Empty;
     }
 
     public class TestResult

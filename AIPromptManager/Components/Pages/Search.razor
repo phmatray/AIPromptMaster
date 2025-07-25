@@ -18,23 +18,23 @@
     <!-- Search Bar -->
     <div class="flex justify-center">
         <div class="w-full max-w-2xl">
-            <SearchBar @bind-SearchTerm="searchTerm" 
+            <SearchBar @bind-SearchTerm="_searchTerm" 
                       OnSearch="HandleSearch" 
                       OnClear="HandleClearSearch"
-                      IsSearching="isSearching"
-                      SearchResultCount="searchResults.Count"
+                      IsSearching="_isSearching"
+                      SearchResultCount="_searchResults.Count"
                       Placeholder="Search prompts by title, description, content, or tags..." />
         </div>
     </div>
 
     <!-- Active Filter Display -->
-    @if (!string.IsNullOrEmpty(activeTagFilter))
+    @if (!string.IsNullOrEmpty(_activeTagFilter))
     {
         <div class="flex justify-center">
             <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">Filtered by tag:</span>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    @activeTagFilter
+                    @_activeTagFilter
                     <button @onclick="ClearTagFilter" class="ml-1 text-blue-600 hover:text-blue-800">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -46,10 +46,10 @@
     }
 
     <!-- Search Results -->
-    @if (hasSearched)
+    @if (_hasSearched)
     {
-        <PromptList Prompts="searchResults" 
-                   IsLoading="isSearching"
+        <PromptList Prompts="_searchResults" 
+                   IsLoading="_isSearching"
                    SearchTerm="searchTerm"
                    OnEdit="HandleEdit" 
                    OnDelete="HandleDelete" 
@@ -71,64 +71,64 @@
     }
 
     <!-- Delete Confirmation Dialog -->
-    <ConfirmDialog IsVisible="showDeleteConfirmation"
+    <ConfirmDialog IsVisible="_showDeleteConfirmation"
                    Title="Delete Prompt"
                    Message="@GetDeleteConfirmationMessage()"
                    ConfirmText="Delete"
                    CancelText="Cancel"
                    ProcessingText="Deleting..."
                    Type="ConfirmDialog.ConfirmDialogType.Danger"
-                   IsProcessing="isDeletingPrompt"
+                   IsProcessing="_isDeletingPrompt"
                    CloseOnBackdropClick="true"
                    OnConfirm="ConfirmDelete"
                    OnCancel="CancelDelete" />
 </div>
 
 @code {
-    private List<Prompt> searchResults = new();
-    private bool isSearching = false;
-    private bool hasSearched = false;
-    private string searchTerm = string.Empty;
-    private string activeTagFilter = string.Empty;
+    private List<Prompt> _searchResults = new();
+    private bool _isSearching;
+    private bool _hasSearched;
+    private string _searchTerm = string.Empty;
+    private string _activeTagFilter = string.Empty;
     
     // Delete confirmation state
-    private bool showDeleteConfirmation = false;
-    private Prompt? promptToDelete = null;
-    private bool isDeletingPrompt = false;
+    private bool _showDeleteConfirmation;
+    private Prompt? _promptToDelete;
+    private bool _isDeletingPrompt;
 
     private async Task HandleSearch(string term)
     {
         try
         {
-            isSearching = true;
-            searchTerm = term;
-            hasSearched = true;
+            _isSearching = true;
+            _searchTerm = term;
+            _hasSearched = true;
             StateHasChanged();
             
             await PerformSearchAsync();
         }
         finally
         {
-            isSearching = false;
+            _isSearching = false;
             StateHasChanged();
         }
     }
 
-    private async Task HandleClearSearch()
+    private void HandleClearSearch()
     {
         try
         {
-            isSearching = true;
-            searchTerm = string.Empty;
-            activeTagFilter = string.Empty;
-            hasSearched = false;
+            _isSearching = true;
+            _searchTerm = string.Empty;
+            _activeTagFilter = string.Empty;
+            _hasSearched = false;
             StateHasChanged();
             
-            searchResults.Clear();
+            _searchResults.Clear();
         }
         finally
         {
-            isSearching = false;
+            _isSearching = false;
             StateHasChanged();
         }
     }
@@ -139,9 +139,9 @@
         {
             IEnumerable<Prompt> results;
 
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
             {
-                results = await PromptService.SearchPromptsAsync(searchTerm);
+                results = await PromptService.SearchPromptsAsync(_searchTerm);
             }
             else
             {
@@ -149,17 +149,17 @@
             }
 
             // Apply tag filter
-            if (!string.IsNullOrWhiteSpace(activeTagFilter))
+            if (!string.IsNullOrWhiteSpace(_activeTagFilter))
             {
-                results = results.Where(p => p.Tags.Any(t => t.Name.Equals(activeTagFilter, StringComparison.OrdinalIgnoreCase)));
+                results = results.Where(p => p.Tags.Any(t => t.Name.Equals(_activeTagFilter, StringComparison.OrdinalIgnoreCase)));
             }
 
-            searchResults = results.ToList();
+            _searchResults = results.ToList();
         }
         catch (Exception ex)
         {
             ToastService.ShowError($"Error searching prompts: {ex.Message}", "Search Error");
-            searchResults = new List<Prompt>();
+            _searchResults = new List<Prompt>();
         }
     }
 
@@ -170,14 +170,14 @@
 
     private void HandleDelete(Prompt prompt)
     {
-        promptToDelete = prompt;
-        showDeleteConfirmation = true;
+        _promptToDelete = prompt;
+        _showDeleteConfirmation = true;
         StateHasChanged();
     }
 
     private async Task HandleTagClick(string tagName)
     {
-        activeTagFilter = tagName;
+        _activeTagFilter = tagName;
         await PerformSearchAsync();
     }
 
@@ -188,43 +188,43 @@
 
     private async Task ClearTagFilter()
     {
-        activeTagFilter = string.Empty;
+        _activeTagFilter = string.Empty;
         await PerformSearchAsync();
     }
 
     private string GetDeleteConfirmationMessage()
     {
-        if (promptToDelete == null) return "Are you sure you want to delete this prompt?";
-        return $"Are you sure you want to delete \"{promptToDelete.Title}\"? This action cannot be undone.";
+        if (_promptToDelete == null) return "Are you sure you want to delete this prompt?";
+        return $"Are you sure you want to delete \"{_promptToDelete.Title}\"? This action cannot be undone.";
     }
 
     private void CancelDelete()
     {
-        showDeleteConfirmation = false;
-        promptToDelete = null;
+        _showDeleteConfirmation = false;
+        _promptToDelete = null;
         StateHasChanged();
     }
 
     private async Task ConfirmDelete()
     {
-        if (promptToDelete == null) return;
+        if (_promptToDelete == null) return;
 
         try
         {
-            isDeletingPrompt = true;
+            _isDeletingPrompt = true;
             StateHasChanged();
 
-            await PromptService.DeletePromptAsync(promptToDelete.Id);
+            await PromptService.DeletePromptAsync(_promptToDelete.Id);
             
             // Remove from search results to reflect changes immediately
-            searchResults.RemoveAll(p => p.Id == promptToDelete.Id);
+            _searchResults.RemoveAll(p => p.Id == _promptToDelete.Id);
             
-            ToastService.ShowSuccess($"Prompt '{promptToDelete.Title}' deleted successfully!");
+            ToastService.ShowSuccess($"Prompt '{_promptToDelete.Title}' deleted successfully!");
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
             ToastService.ShowWarning("This prompt has already been deleted.", "Warning");
-            searchResults.RemoveAll(p => p.Id == promptToDelete.Id);
+            _searchResults.RemoveAll(p => p.Id == _promptToDelete.Id);
         }
         catch (Exception ex)
         {
@@ -232,9 +232,9 @@
         }
         finally
         {
-            isDeletingPrompt = false;
-            showDeleteConfirmation = false;
-            promptToDelete = null;
+            _isDeletingPrompt = false;
+            _showDeleteConfirmation = false;
+            _promptToDelete = null;
             StateHasChanged();
         }
     }

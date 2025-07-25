@@ -13,9 +13,9 @@
     <button @onclick="ToggleMobileNav" 
             class="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-md bg-white shadow-md border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             aria-label="Toggle navigation"
-            aria-expanded="@isMobileNavOpen">
+            aria-expanded="@_isMobileNavOpen">
         <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            @if (isMobileNavOpen)
+            @if (_isMobileNavOpen)
             {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             }
@@ -27,7 +27,7 @@
     </button>
 
     <!-- Mobile Overlay -->
-    @if (isMobileNavOpen)
+    @if (_isMobileNavOpen)
     {
         <div class="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" @onclick="CloseMobileNav" aria-hidden="true"></div>
     }
@@ -94,16 +94,16 @@
 @inject IJSRuntime JSRuntime
 
 @code {
-    private bool isMobileNavOpen = false;
+    private bool _isMobileNavOpen;
 
     private void ToggleMobileNav()
     {
-        isMobileNavOpen = !isMobileNavOpen;
+        _isMobileNavOpen = !_isMobileNavOpen;
     }
 
     private void CloseMobileNav()
     {
-        isMobileNavOpen = false;
+        _isMobileNavOpen = false;
     }
 
     private async Task SkipToContent()
@@ -114,6 +114,6 @@
     private string GetSidebarClasses()
     {
         var baseClasses = "fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0";
-        return isMobileNavOpen ? baseClasses : $"{baseClasses} -translate-x-full lg:translate-x-0";
+        return _isMobileNavOpen ? baseClasses : $"{baseClasses} -translate-x-full lg:translate-x-0";
     }
 }

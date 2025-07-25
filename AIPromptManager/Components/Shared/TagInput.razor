@@ -1,4 +1,3 @@
-@using AIPromptManager.Models
 @using AIPromptManager.Services
 @inject ITagService TagService
 @inject IValidationService ValidationService
@@ -37,7 +36,7 @@
     <!-- Tag Input with Autocomplete -->
     <div class="relative">
         <input type="text" 
-               @bind="currentInput" 
+               @bind="_currentInput" 
                @bind:event="oninput"
                @onkeydown="HandleKeyDown"
                @onfocus="ShowSuggestions"
@@ -47,16 +46,16 @@
                aria-describedby="@(ErrorMessage != null ? "tag-error" : "tag-help")"
                aria-label="Add tags"
                role="combobox"
-               aria-expanded="@(showSuggestions && suggestions.Any())"
+               aria-expanded="@(_showSuggestions && _suggestions.Any())"
                aria-autocomplete="list" />
         
         <!-- Autocomplete Suggestions -->
-        @if (showSuggestions && suggestions.Any())
+        @if (_showSuggestions && _suggestions.Any())
         {
             <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                  role="listbox"
                  aria-label="Tag suggestions">
-                @foreach (var suggestion in suggestions.Take(10))
+                @foreach (var suggestion in _suggestions.Take(10))
                 {
                     <button type="button"
                             @onmousedown="() => SelectSuggestion(suggestion)"
@@ -85,20 +84,20 @@
 @code {
     [Parameter] public List<string> SelectedTags { get; set; } = new();
     [Parameter] public EventCallback<List<string>> SelectedTagsChanged { get; set; }
-    [Parameter] public bool Required { get; set; } = false;
+    [Parameter] public bool Required { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
 
-    private string currentInput = string.Empty;
-    private List<string> suggestions = new();
-    private bool showSuggestions = false;
-    private Timer? debounceTimer;
+    private string _currentInput = string.Empty;
+    private List<string> _suggestions = new();
+    private bool _showSuggestions;
+    private Timer? _debounceTimer;
 
     private string CurrentInput
     {
-        get => currentInput;
+        get => _currentInput;
         set
         {
-            currentInput = value;
+            _currentInput = value;
             DebounceGetSuggestions();
         }
     }
@@ -111,23 +110,23 @@
 
     private void DebounceGetSuggestions()
     {
-        debounceTimer?.Dispose();
-        debounceTimer = new Timer(async _ => await GetSuggestions(), null, 300, Timeout.Infinite);
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(async _ => await GetSuggestions(), null, 300, Timeout.Infinite);
     }
 
     private async Task GetSuggestions()
     {
-        if (string.IsNullOrWhiteSpace(currentInput))
+        if (string.IsNullOrWhiteSpace(_currentInput))
         {
-            suggestions.Clear();
+            _suggestions.Clear();
             await InvokeAsync(StateHasChanged);
             return;
         }
 
         try
         {
-            var allSuggestions = await TagService.GetTagSuggestionsAsync(currentInput);
-            suggestions = allSuggestions
+            var allSuggestions = await TagService.GetTagSuggestionsAsync(_currentInput);
+            _suggestions = allSuggestions
                 .Where(s => !SelectedTags.Contains(s, StringComparer.OrdinalIgnoreCase))
                 .ToList();
             
@@ -135,7 +134,7 @@
         }
         catch (Exception)
         {
-            suggestions.Clear();
+            _suggestions.Clear();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -146,7 +145,7 @@
         {
             await AddCurrentTag();
         }
-        else if (e.Key == "Backspace" && string.IsNullOrEmpty(currentInput) && SelectedTags.Any())
+        else if (e.Key == "Backspace" && string.IsNullOrEmpty(_currentInput) && SelectedTags.Any())
         {
             // Remove last tag when backspace is pressed on empty input
             var lastTag = SelectedTags.Last();
@@ -154,14 +153,14 @@
         }
         else if (e.Key == "Escape")
         {
-            showSuggestions = false;
+            _showSuggestions = false;
             StateHasChanged();
         }
     }
 
     private async Task AddCurrentTag()
     {
-        var tagName = ValidationService.SanitizeInput(currentInput.Trim().TrimEnd(','));
+        var tagName = ValidationService.SanitizeInput(_currentInput.Trim().TrimEnd(','));
         
         if (string.IsNullOrWhiteSpace(tagName))
             return;
@@ -194,9 +193,9 @@
         ErrorMessage = null;
         
         SelectedTags.Add(tagName);
-        currentInput = string.Empty;
-        suggestions.Clear();
-        showSuggestions = false;
+        _currentInput = string.Empty;
+        _suggestions.Clear();
+        _showSuggestions = false;
         
         await SelectedTagsChanged.InvokeAsync(SelectedTags);
         StateHasChanged();
@@ -225,9 +224,9 @@
             ErrorMessage = null;
             
             SelectedTags.Add(suggestion);
-            currentInput = string.Empty;
-            suggestions.Clear();
-            showSuggestions = false;
+            _currentInput = string.Empty;
+            _suggestions.Clear();
+            _showSuggestions = false;
             
             await SelectedTagsChanged.InvokeAsync(SelectedTags);
             StateHasChanged();
@@ -236,8 +235,8 @@
 
     private void ShowSuggestions()
     {
-        showSuggestions = true;
-        if (!string.IsNullOrWhiteSpace(currentInput))
+        _showSuggestions = true;
+        if (!string.IsNullOrWhiteSpace(_currentInput))
         {
             _ = GetSuggestions();
         }
@@ -247,12 +246,12 @@
     {
         // Small delay to allow click events on suggestions to fire
         await Task.Delay(150);
-        showSuggestions = false;
+        _showSuggestions = false;
         StateHasChanged();
     }
 
     public void Dispose()
     {
-        debounceTimer?.Dispose();
+        _debounceTimer?.Dispose();
     }
 }

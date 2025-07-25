@@ -8,17 +8,11 @@ public interface IErrorHandlingService
     Task ExecuteWithErrorHandlingAsync(Func<Task> operation, string operationName, string? successMessage = null);
 }
 
-public class ErrorHandlingService : IErrorHandlingService
+public class ErrorHandlingService(
+    IToastService toastService,
+    ILogger<ErrorHandlingService> logger)
+    : IErrorHandlingService
 {
-    private readonly IToastService _toastService;
-    private readonly ILogger<ErrorHandlingService> _logger;
-
-    public ErrorHandlingService(IToastService toastService, ILogger<ErrorHandlingService> logger)
-    {
-        _toastService = toastService;
-        _logger = logger;
-    }
-
     public async Task<T> ExecuteWithErrorHandlingAsync<T>(Func<Task<T>> operation, string operationName, string? successMessage = null)
     {
         try
@@ -27,17 +21,17 @@ public class ErrorHandlingService : IErrorHandlingService
             
             if (!string.IsNullOrEmpty(successMessage))
             {
-                _toastService.ShowSuccess(successMessage);
+                toastService.ShowSuccess(successMessage);
             }
             
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during {OperationName}", operationName);
+            logger.LogError(ex, "Error during {OperationName}", operationName);
             
             var userMessage = GetUserFriendlyErrorMessage(ex, operationName);
-            _toastService.ShowError(userMessage, "Error");
+            toastService.ShowError(userMessage, "Error");
             
             throw;
         }
@@ -51,15 +45,15 @@ public class ErrorHandlingService : IErrorHandlingService
             
             if (!string.IsNullOrEmpty(successMessage))
             {
-                _toastService.ShowSuccess(successMessage);
+                toastService.ShowSuccess(successMessage);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during {OperationName}", operationName);
+            logger.LogError(ex, "Error during {OperationName}", operationName);
             
             var userMessage = GetUserFriendlyErrorMessage(ex, operationName);
-            _toastService.ShowError(userMessage, "Error");
+            toastService.ShowError(userMessage, "Error");
             
             throw;
         }

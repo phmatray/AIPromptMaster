@@ -5,26 +5,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AIPromptManager.Middleware;
 
-public class GlobalExceptionMiddleware
+public class GlobalExceptionMiddleware(
+    RequestDelegate next,
+    ILogger<GlobalExceptionMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
-
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred");
+            logger.LogError(ex, "An unhandled exception occurred");
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -109,9 +102,9 @@ public class GlobalExceptionMiddleware
     {
         return exception switch
         {
-            SqliteException sqliteEx when sqliteEx.SqliteErrorCode == 19 => "A record with this information already exists.",
-            SqliteException sqliteEx when sqliteEx.SqliteErrorCode == 1 => "Database operation failed due to SQL error.",
-            DbUpdateException dbEx when dbEx.InnerException is SqliteException innerSqlite && innerSqlite.SqliteErrorCode == 19 => "A record with this information already exists.",
+            SqliteException { SqliteErrorCode: 19 } => "A record with this information already exists.",
+            SqliteException { SqliteErrorCode: 1 } => "Database operation failed due to SQL error.",
+            DbUpdateException { InnerException: SqliteException { SqliteErrorCode: 19 } } => "A record with this information already exists.",
             _ => "Database operation failed."
         };
     }

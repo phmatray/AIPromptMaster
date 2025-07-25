@@ -26,8 +26,8 @@
     [Parameter] public string Message { get; set; } = "Loading...";
     [Parameter] public string Size { get; set; } = "medium"; // small, medium, large
     [Parameter] public string Color { get; set; } = "blue"; // blue, gray, white
-    [Parameter] public bool ShowInline { get; set; } = false;
-    [Parameter] public bool CenterVertically { get; set; } = false;
+    [Parameter] public bool ShowInline { get; set; }
+    [Parameter] public bool CenterVertically { get; set; }
     [Parameter] public string? CustomAriaLabel { get; set; }
     [Parameter] public string? CustomClasses { get; set; }
 

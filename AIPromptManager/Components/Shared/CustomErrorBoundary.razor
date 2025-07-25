@@ -1,9 +1,8 @@
-@using Microsoft.AspNetCore.Components.Web
 @using AIPromptManager.Services
 @inject IToastService ToastService
 @inject ILogger<CustomErrorBoundary> Logger
 
-<Microsoft.AspNetCore.Components.Web.ErrorBoundary @ref="errorBoundary">
+<Microsoft.AspNetCore.Components.Web.ErrorBoundary @ref="_errorBoundary">
     <ChildContent>
         @ChildContent
     </ChildContent>
@@ -37,7 +36,7 @@
                         Refresh Page
                     </button>
                 </div>
-                @if (ShowDetails)
+                @if (_showDetails)
                 {
                     <div class="mt-4 p-3 bg-gray-50 rounded-md text-left">
                         <button @onclick="ToggleDetails" 
@@ -64,18 +63,18 @@
     [Parameter] public string? FallbackMessage { get; set; }
     [Parameter] public bool ShowErrorToast { get; set; } = true;
 
-    private Microsoft.AspNetCore.Components.Web.ErrorBoundary? errorBoundary;
-    private bool ShowDetails = false;
+    private ErrorBoundary? _errorBoundary;
+    private bool _showDetails;
 
     protected override void OnParametersSet()
     {
-        errorBoundary?.Recover();
+        _errorBoundary?.Recover();
     }
 
     private void Recover()
     {
-        errorBoundary?.Recover();
-        ShowDetails = false;
+        _errorBoundary?.Recover();
+        _showDetails = false;
     }
 
     private void RefreshPage()
@@ -85,7 +84,7 @@
 
     private void ToggleDetails()
     {
-        ShowDetails = !ShowDetails;
+        _showDetails = !_showDetails;
     }
 
     // Note: CurrentException is not accessible, so we'll handle error logging in the ErrorContent context

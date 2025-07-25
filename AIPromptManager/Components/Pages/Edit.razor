@@ -2,7 +2,6 @@
 @using AIPromptManager.Models
 @using AIPromptManager.Services
 @using AIPromptManager.Components.Shared
-@using static AIPromptManager.Components.Shared.ConfirmDialog
 @inject IPromptService PromptService
 @inject IToastService ToastService
 @inject NavigationManager Navigation
@@ -10,11 +9,11 @@
 
 <PageTitle>Edit Prompt - AI Prompt Manager</PageTitle>
 
-@if (isLoading)
+@if (_isLoading)
 {
     <LoadingSpinner Message="Loading prompt..." CenterVertically="true" />
 }
-else if (prompt == null)
+else if (_prompt == null)
 {
     <div class="text-center py-12">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,7 +39,7 @@ else
 
         <!-- Prompt Form -->
         <div class="bg-white shadow rounded-lg">
-            <PromptForm ExistingPrompt="prompt" 
+            <PromptForm ExistingPrompt="_prompt" 
                        OnSave="@HandleSave" 
                        OnCancel="@HandleCancel"
                        OnDelete="@HandleDelete"
@@ -52,8 +51,8 @@ else
 @code {
     [Parameter] public int Id { get; set; }
 
-    private Prompt? prompt;
-    private bool isLoading = true;
+    private Prompt? _prompt;
+    private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,17 +71,17 @@ else
     {
         try
         {
-            isLoading = true;
-            prompt = await PromptService.GetPromptByIdAsync(Id);
+            _isLoading = true;
+            _prompt = await PromptService.GetPromptByIdAsync(Id);
         }
         catch (Exception ex)
         {
             ToastService.ShowError($"Error loading prompt: {ex.Message}", "Error");
-            prompt = null;
+            _prompt = null;
         }
         finally
         {
-            isLoading = false;
+            _isLoading = false;
             StateHasChanged();
         }
     }
@@ -92,7 +91,7 @@ else
         try
         {
             // Update the local prompt reference to reflect changes immediately
-            prompt = savedPrompt;
+            _prompt = savedPrompt;
             
             // Show success message
             ToastService.ShowSuccess($"Prompt '{savedPrompt.Title}' updated successfully!");

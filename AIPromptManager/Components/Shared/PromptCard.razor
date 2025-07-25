@@ -20,9 +20,9 @@
                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     title="Copy prompt to clipboard (Ctrl+C)"
                     aria-label="Copy prompt to clipboard"
-                    aria-describedby="@(showCopySuccess ? $"copy-success-{Prompt.Id}" : null)"
+                    aria-describedby="@(_showCopySuccess ? $"copy-success-{Prompt.Id}" : null)"
                     tabindex="0">
-                @if (showCopySuccess)
+                @if (_showCopySuccess)
                 {
                     <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -107,7 +107,7 @@
     </div>
 
     <!-- Copy Success Message -->
-    @if (showCopySuccess)
+    @if (_showCopySuccess)
     {
         <div id="copy-success-@Prompt.Id" class="mt-2 text-xs text-green-600 font-medium" role="status" aria-live="polite">
             Copied to clipboard!
@@ -122,19 +122,19 @@
     [Parameter] public EventCallback<string> OnTagClick { get; set; }
     [Parameter] public string SearchTerm { get; set; } = string.Empty;
 
-    private bool showCopySuccess = false;
+    private bool _showCopySuccess;
 
     private async Task CopyToClipboard()
     {
         try
         {
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", Prompt.Content);
-            showCopySuccess = true;
+            _showCopySuccess = true;
             StateHasChanged();
             
             // Hide success message after 2 seconds
             await Task.Delay(2000);
-            showCopySuccess = false;
+            _showCopySuccess = false;
             StateHasChanged();
         }
         catch (Exception)
