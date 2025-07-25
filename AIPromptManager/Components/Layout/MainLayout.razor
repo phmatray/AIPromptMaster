@@ -1,5 +1,12 @@
-﻿@using AIPromptManager.Components.Shared
+@using AIPromptManager.Components.Shared
 @inherits LayoutComponentBase
+
+<!-- Skip Link -->
+<a href="#main-content" 
+   class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md focus:shadow-lg"
+   @onclick="SkipToContent">
+    Skip to main content
+</a>
 
 <div class="min-h-screen bg-gray-50">
     <!-- Mobile Navigation Toggle -->
@@ -53,7 +60,7 @@
             </header>
 
             <!-- Main Content Area -->
-            <main class="flex-1 p-4 sm:p-6 lg:p-8" role="main">
+            <main id="main-content" class="flex-1 p-4 sm:p-6 lg:p-8" role="main" tabindex="-1">
                 <div class="max-w-7xl mx-auto">
                     @Body
                 </div>
@@ -65,8 +72,8 @@
 <!-- Toast Container -->
 <ToastContainer />
 
-<div id="blazor-error-ui" data-nosnippet>
-    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 fixed bottom-0 left-0 right-0 z-50">
+<div id="blazor-error-ui" style="display: none;" data-nosnippet>
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 fixed bottom-0 left-0 right-0 z-50" role="alert" aria-live="assertive">
         <div class="flex justify-between items-center">
             <div class="flex items-center">
                 <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -75,12 +82,16 @@
                 <span>An unhandled error has occurred.</span>
             </div>
             <div class="flex items-center space-x-2">
-                <a href="." class="text-yellow-800 hover:text-yellow-900 font-medium">Reload</a>
-                <button class="text-yellow-800 hover:text-yellow-900 font-bold text-lg" onclick="document.getElementById('blazor-error-ui').style.display = 'none'">×</button>
+                <a href="." class="text-yellow-900 hover:text-yellow-950 font-medium focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 rounded px-2 py-1">Reload</a>
+                <button class="text-yellow-900 hover:text-yellow-950 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 rounded px-1" 
+                        onclick="document.getElementById('blazor-error-ui').style.display = 'none'"
+                        aria-label="Dismiss error message">×</button>
             </div>
         </div>
     </div>
 </div>
+
+@inject IJSRuntime JSRuntime
 
 @code {
     private bool isMobileNavOpen = false;
@@ -93,6 +104,11 @@
     private void CloseMobileNav()
     {
         isMobileNavOpen = false;
+    }
+
+    private async Task SkipToContent()
+    {
+        await JSRuntime.InvokeVoidAsync("skipToContent");
     }
 
     private string GetSidebarClasses()
