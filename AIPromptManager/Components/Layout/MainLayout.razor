@@ -8,22 +8,20 @@
     Skip to main content
 </a>
 
-<div class="min-h-screen bg-gray-50">
+<div class="h-screen overflow-hidden bg-gray-50">
     <!-- Mobile Navigation Toggle -->
     <button @onclick="ToggleMobileNav" 
             class="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-md bg-white shadow-md border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             aria-label="Toggle navigation"
             aria-expanded="@_isMobileNavOpen">
-        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            @if (_isMobileNavOpen)
-            {
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            }
-            else
-            {
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            }
-        </svg>
+        @if (_isMobileNavOpen)
+        {
+            <i class="fas fa-times fa-lg text-gray-600" aria-hidden="true"></i>
+        }
+        else
+        {
+            <i class="fas fa-bars fa-lg text-gray-600" aria-hidden="true"></i>
+        }
     </button>
 
     <!-- Mobile Overlay -->
@@ -32,16 +30,16 @@
         <div class="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" @onclick="CloseMobileNav" aria-hidden="true"></div>
     }
 
-    <div class="flex min-h-screen">
+    <div class="flex h-full">
         <!-- Sidebar -->
         <aside class="@GetSidebarClasses()" role="navigation" aria-label="Main navigation">
             <NavMenu OnNavItemClick="CloseMobileNav" />
         </aside>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col lg:pl-64">
             <!-- Header -->
-            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+            <header class="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
                 <div class="px-4 sm:px-6 lg:px-8 py-4">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center">
@@ -60,7 +58,7 @@
             </header>
 
             <!-- Main Content Area -->
-            <main id="main-content" class="flex-1 p-4 sm:p-6 lg:p-8" role="main" tabindex="-1">
+            <main id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" role="main" tabindex="-1">
                 <div class="max-w-7xl mx-auto">
                     @Body
                 </div>
@@ -76,9 +74,7 @@
     <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 fixed bottom-0 left-0 right-0 z-50" role="alert" aria-live="assertive">
         <div class="flex justify-between items-center">
             <div class="flex items-center">
-                <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
+                <i class="fas fa-exclamation-triangle fa-lg mr-2" aria-hidden="true"></i>
                 <span>An unhandled error has occurred.</span>
             </div>
             <div class="flex items-center space-x-2">
@@ -113,7 +109,9 @@
 
     private string GetSidebarClasses()
     {
-        var baseClasses = "fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0";
-        return _isMobileNavOpen ? baseClasses : $"{baseClasses} -translate-x-full lg:translate-x-0";
+        var baseClasses = "fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out overflow-y-auto";
+        return _isMobileNavOpen 
+            ? baseClasses 
+            : $"{baseClasses} -translate-x-full lg:translate-x-0";
     }
 }
