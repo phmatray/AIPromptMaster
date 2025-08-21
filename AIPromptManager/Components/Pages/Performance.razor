@@ -1,0 +1,328 @@
+@page "/performance"
+@using AIPromptManager.Services
+@rendermode InteractiveServer
+@inject IPerformanceMonitoringService PerformanceService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Performance Dashboard - AI Prompt Manager</PageTitle>
+
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Performance Dashboard</h1>
+        <p class="mt-1 text-sm text-gray-600">Monitor application performance and optimize database queries</p>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="ml-2 text-gray-600">Loading performance data...</span>
+        </div>
+    }
+    else if (_metrics != null)
+    {
+        <!-- Performance Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Average Query Time -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-blue-600 text-xl" aria-hidden="true"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Average Query Time</dt>
+                                <dd class="text-lg font-medium text-gray-900">@($"{_metrics.AverageQueryTime:F1}ms")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="@GetPerformanceClass(_metrics.AverageQueryTime, 100, 500)">
+                            @GetPerformanceStatus(_metrics.AverageQueryTime, 100, 500)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Queries -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-database text-green-600 text-xl" aria-hidden="true"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Queries (Last Hour)</dt>
+                                <dd class="text-lg font-medium text-gray-900">@_metrics.TotalQueries</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="text-gray-600">
+                            @(_metrics.SlowQueries) slow queries
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Size -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-hdd text-purple-600 text-xl" aria-hidden="true"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Prompts</dt>
+                                <dd class="text-lg font-medium text-gray-900">@_metrics.TotalPrompts</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="text-gray-600">
+                            @_metrics.TotalTags tags
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slow Queries -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl" aria-hidden="true"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Slow Queries</dt>
+                                <dd class="text-lg font-medium text-gray-900">@_metrics.SlowQueries</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="@GetSlowQueryClass(_metrics.SlowQueries, _metrics.TotalQueries)">
+                            @GetSlowQueryPercentage(_metrics.SlowQueries, _metrics.TotalQueries)% of total
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Performance Actions</h2>
+            <div class="flex flex-wrap gap-4">
+                <button @onclick="RefreshMetrics" 
+                        disabled="@_isRefreshing"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                    @if (_isRefreshing)
+                    {
+                        <i class="fas fa-spinner fa-spin -ml-1 mr-2" aria-hidden="true"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-sync-alt -ml-1 mr-2" aria-hidden="true"></i>
+                    }
+                    Refresh Metrics
+                </button>
+
+                <button @onclick="OptimizeDatabase" 
+                        disabled="@_isOptimizing"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
+                    @if (_isOptimizing)
+                    {
+                        <i class="fas fa-spinner fa-spin -ml-1 mr-2" aria-hidden="true"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-tools -ml-1 mr-2" aria-hidden="true"></i>
+                    }
+                    Optimize Database
+                </button>
+
+                <button @onclick="RunResponsiveTests" 
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-mobile-alt -ml-1 mr-2" aria-hidden="true"></i>
+                    Test Responsive Design
+                </button>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        @if (_metrics.Recommendations.Any())
+        {
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <h2 class="text-lg font-medium text-yellow-800 mb-4">
+                    <i class="fas fa-lightbulb mr-2" aria-hidden="true"></i>
+                    Performance Recommendations
+                </h2>
+                <ul class="space-y-2">
+                    @foreach (var recommendation in _metrics.Recommendations)
+                    {
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-yellow-600 mt-1 mr-2 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="text-yellow-700">@recommendation</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Slow Queries -->
+        @if (_slowQueries.Any())
+        {
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Recent Slow Queries</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Query</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Results</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Executed At</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var query in _slowQueries)
+                            {
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@query.QueryName</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">@($"{query.Duration.TotalMilliseconds:F0}ms")</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@query.ResultCount</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@query.ExecutedAt.ToString("HH:mm:ss")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-12">
+            <i class="fas fa-exclamation-circle fa-3x text-gray-400" aria-hidden="true"></i>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No performance data available</h3>
+            <p class="mt-1 text-sm text-gray-500">Performance monitoring data will appear here once queries are executed.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private PerformanceMetrics? _metrics;
+    private IEnumerable<QueryPerformanceLog> _slowQueries = new List<QueryPerformanceLog>();
+    private bool _isLoading = true;
+    private bool _isRefreshing = false;
+    private bool _isOptimizing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPerformanceData();
+    }
+
+    private async Task LoadPerformanceData()
+    {
+        try
+        {
+            _isLoading = true;
+            _metrics = await PerformanceService.GetPerformanceMetricsAsync();
+            _slowQueries = await PerformanceService.GetSlowQueriesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading performance data: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshMetrics()
+    {
+        try
+        {
+            _isRefreshing = true;
+            StateHasChanged();
+            await LoadPerformanceData();
+        }
+        finally
+        {
+            _isRefreshing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OptimizeDatabase()
+    {
+        try
+        {
+            _isOptimizing = true;
+            StateHasChanged();
+            
+            await PerformanceService.OptimizePerformanceAsync();
+            await LoadPerformanceData();
+            
+            // Show success message
+            await JSRuntime.InvokeVoidAsync("alert", "Database optimization completed successfully!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error optimizing database: {ex.Message}");
+        }
+        finally
+        {
+            _isOptimizing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RunResponsiveTests()
+    {
+        await JSRuntime.InvokeVoidAsync("window.open", "/responsive-test", "_blank");
+    }
+
+    private string GetPerformanceClass(double value, double good, double bad)
+    {
+        if (value <= good) return "text-green-600 font-medium";
+        if (value <= bad) return "text-yellow-600 font-medium";
+        return "text-red-600 font-medium";
+    }
+
+    private string GetPerformanceStatus(double value, double good, double bad)
+    {
+        if (value <= good) return "Excellent";
+        if (value <= bad) return "Good";
+        return "Needs Attention";
+    }
+
+    private string GetSlowQueryClass(int slowQueries, int totalQueries)
+    {
+        if (totalQueries == 0) return "text-gray-600";
+        
+        var percentage = (double)slowQueries / totalQueries * 100;
+        if (percentage <= 5) return "text-green-600";
+        if (percentage <= 15) return "text-yellow-600";
+        return "text-red-600";
+    }
+
+    private double GetSlowQueryPercentage(int slowQueries, int totalQueries)
+    {
+        if (totalQueries == 0) return 0;
+        return Math.Round((double)slowQueries / totalQueries * 100, 1);
+    }
+}

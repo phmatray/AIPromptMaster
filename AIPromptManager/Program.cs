@@ -21,6 +21,8 @@ builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IToastService, ToastService>();
 builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+builder.Services.AddScoped<IPerformanceMonitoringService, PerformanceMonitoringService>();
+builder.Services.AddSingleton<IComponentOptimizationService, ComponentOptimizationService>();
 
 // Add background services
 builder.Services.AddHostedService<StorageCleanupService>();

@@ -1,0 +1,310 @@
+/**
+ * Responsive Design Enhancements
+ * Additional CSS to ensure optimal responsive behavior
+ */
+
+/* Ensure proper box-sizing for all elements */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* Responsive images and media */
+img, video, iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ensure touch targets are large enough on mobile */
+@media (max-width: 768px) {
+    button, 
+    a[role="button"], 
+    input[type="button"], 
+    input[type="submit"], 
+    [tabindex="0"] {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+    }
+    
+    /* Ensure form inputs are touch-friendly */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    textarea,
+    select {
+        min-height: 44px;
+        padding: 12px 16px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Stack form elements vertically on mobile */
+    .form-row {
+        flex-direction: column !important;
+    }
+    
+    .form-row > * {
+        width: 100% !important;
+        margin-bottom: 12px;
+    }
+    
+    /* Ensure adequate spacing between touch targets */
+    .button-group button + button,
+    .action-buttons button + button {
+        margin-left: 0;
+        margin-top: 8px;
+    }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 769px) and (max-width: 1023px) {
+    /* Optimize for tablet touch targets */
+    button, 
+    a[role="button"] {
+        min-height: 40px;
+        padding: 10px 16px;
+    }
+}
+
+/* Desktop-specific enhancements */
+@media (min-width: 1024px) {
+    /* Ensure hover states are visible */
+    button:hover,
+    a[role="button"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    /* Optimize focus indicators for keyboard navigation */
+    button:focus,
+    a:focus,
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    button,
+    a[role="button"] {
+        border: 2px solid currentColor;
+    }
+    
+    .bg-blue-600 {
+        background-color: #1e40af !important;
+    }
+    
+    .text-gray-600 {
+        color: #374151 !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print,
+    button,
+    .button,
+    nav,
+    .navigation {
+        display: none !important;
+    }
+    
+    .print-break {
+        page-break-before: always;
+    }
+    
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1f2937;
+        --bg-secondary: #374151;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --border-color: #4b5563;
+    }
+}
+
+/* Landscape orientation adjustments for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .mobile-landscape-stack {
+        flex-direction: row !important;
+    }
+    
+    .mobile-landscape-stack > * {
+        flex: 1;
+        margin-right: 8px;
+    }
+    
+    .mobile-landscape-stack > *:last-child {
+        margin-right: 0;
+    }
+}
+
+/* Utility classes for responsive behavior */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1280px) {
+    .responsive-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Responsive text sizing */
+.responsive-text {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.25rem; /* 20px */
+}
+
+@media (min-width: 640px) {
+    .responsive-text {
+        font-size: 1rem; /* 16px */
+        line-height: 1.5rem; /* 24px */
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-text {
+        font-size: 1.125rem; /* 18px */
+        line-height: 1.75rem; /* 28px */
+    }
+}
+
+/* Container queries support (where available) */
+@container (max-width: 400px) {
+    .container-responsive {
+        padding: 0.5rem;
+    }
+    
+    .container-responsive .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@container (min-width: 401px) {
+    .container-responsive {
+        padding: 1rem;
+    }
+    
+    .container-responsive .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Accessibility enhancements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* Skip link styling */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 1000;
+    border-radius: 4px;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* Responsive table handling */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+    .table-responsive table {
+        min-width: 600px;
+    }
+}
+
+/* Loading states */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading-skeleton {
+        animation: none;
+        background: #f0f0f0;
+    }
+}

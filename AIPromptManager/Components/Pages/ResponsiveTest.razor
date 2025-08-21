@@ -35,6 +35,11 @@
                 🧪 Run All Tests
             </button>
             
+            <button @onclick="RunComprehensiveTests" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                🔬 Run Comprehensive Tests
+            </button>
+            
             <button @onclick="ResetViewport" 
                     class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                 🔄 Reset Viewport
@@ -203,6 +208,20 @@
         }
     }
 
+    private async Task RunComprehensiveTests()
+    {
+        try
+        {
+            var results = await JSRuntime.InvokeAsync<TestResult[]>("runComprehensiveResponsiveTests");
+            _testResults = results?.ToList() ?? new List<TestResult>();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error running comprehensive tests: {ex.Message}");
+        }
+    }
+
     private void HandleSampleSearch(string searchTerm)
     {
         _sampleSearchTerm = searchTerm;
@@ -271,6 +290,28 @@
             }));
         } else {
             console.error('ResponsiveDesignTester not loaded');
+            return [];
+        }
+    };
+
+    window.runComprehensiveResponsiveTests = async () => {
+        if (window.ResponsiveTestRunner) {
+            const runner = new window.ResponsiveTestRunner();
+            const results = await runner.runComprehensiveTests();
+            
+            // Convert to format expected by Blazor
+            return results.map(viewport => ({
+                viewportName: viewport.viewport,
+                width: viewport.width,
+                height: viewport.height,
+                tests: viewport.tests.map(test => ({
+                    name: test.name,
+                    passed: test.passed,
+                    issues: test.issues || []
+                }))
+            }));
+        } else {
+            console.error('ResponsiveTestRunner not loaded');
             return [];
         }
     };

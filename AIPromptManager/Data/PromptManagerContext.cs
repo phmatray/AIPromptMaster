@@ -33,6 +33,16 @@ public class PromptManagerContext(DbContextOptions<PromptManagerContext> options
             entity.Property(p => p.UpdatedAt)
                 .IsRequired();
 
+            // Performance optimization: Add indexes for common queries
+            entity.HasIndex(p => p.UpdatedAt)
+                .HasDatabaseName("IX_Prompts_UpdatedAt");
+                
+            entity.HasIndex(p => p.CreatedAt)
+                .HasDatabaseName("IX_Prompts_CreatedAt");
+                
+            entity.HasIndex(p => p.Title)
+                .HasDatabaseName("IX_Prompts_Title");
+
             // Configure many-to-many relationship with Tags
             entity.HasMany(p => p.Tags)
                 .WithMany(t => t.Prompts)
@@ -44,6 +54,9 @@ public class PromptManagerContext(DbContextOptions<PromptManagerContext> options
                     {
                         j.HasKey("PromptId", "TagId");
                         j.ToTable("PromptTags");
+                        // Add indexes for junction table performance
+                        j.HasIndex("PromptId").HasDatabaseName("IX_PromptTags_PromptId");
+                        j.HasIndex("TagId").HasDatabaseName("IX_PromptTags_TagId");
                     });
         });
 

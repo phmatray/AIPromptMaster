@@ -8,24 +8,59 @@ public class PromptService(
     PromptManagerContext context,
     ILogger<PromptService> logger,
     IValidationService validationService,
-    IStorageService storageService)
+    IStorageService storageService,
+    IPerformanceMonitoringService performanceMonitoring)
     : IPromptService
 {
     public async Task<IEnumerable<Prompt>> GetAllPromptsAsync()
     {
-        try
+        return await performanceMonitoring.MonitorPerformanceAsync("GetAllPrompts", async () =>
         {
-            logger.LogDebug("Retrieving all prompts");
-            return await context.Prompts
-                .Include(p => p.Tags)
-                .OrderByDescending(p => p.UpdatedAt)
-                .ToListAsync();
-        }
-        catch (Exception ex)
+            try
+            {
+                logger.LogDebug("Retrieving all prompts");
+                return await context.Prompts
+                    .Include(p => p.Tags)
+                    .OrderByDescending(p => p.UpdatedAt)
+                    .AsNoTracking() // Performance optimization: don't track entities for read-only operations
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error retrieving all prompts");
+                throw;
+            }
+        });
+    }
+
+    public async Task<(IEnumerable<Prompt> Prompts, int TotalCount)> GetPromptsPagedAsync(int page = 1, int pageSize = 12)
+    {
+        return await performanceMonitoring.MonitorPerformanceAsync("GetPromptsPaged", async () =>
         {
-            logger.LogError(ex, "Error retrieving all prompts");
-            throw;
-        }
+            try
+            {
+                logger.LogDebug("Retrieving prompts page {Page} with size {PageSize}", page, pageSize);
+                
+                var query = context.Prompts
+                    .Include(p => p.Tags)
+                    .OrderByDescending(p => p.UpdatedAt)
+                    .AsNoTracking();
+
+                var totalCount = await query.CountAsync();
+                
+                var prompts = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (prompts, totalCount);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error retrieving paged prompts");
+                throw;
+            }
+        });
     }
 
     public async Task<Prompt?> GetPromptByIdAsync(int id)
@@ -35,6 +70,7 @@ public class PromptService(
             logger.LogDebug("Retrieving prompt with ID: {PromptId}", id);
             return await context.Prompts
                 .Include(p => p.Tags)
+                .AsNoTracking() // Performance optimization for read-only operations
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
         catch (Exception ex)
@@ -400,12 +436,49 @@ public class PromptService(
 
             return await context.Prompts
                 .Include(p => p.Tags)
-                .Where(p => p.Title.ToLower().Contains(lowerSearchTerm) ||
-                            (p.Description != null && p.Description.ToLower().Contains(lowerSearchTerm)) ||
-                            p.Content.ToLower().Contains(lowerSearchTerm) ||
-                            p.Tags.Any(t => t.Name.ToLower().Contains(lowerSearchTerm)))
+                .Where(p => EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
+                            (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{lowerSearchTerm}%")) ||
+                            EF.Functions.Like(p.Content.ToLower(), $"%{lowerSearchTerm}%") ||
+                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%")))
                 .OrderByDescending(p => p.UpdatedAt)
+                .AsNoTracking() // Performance optimization
                 .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error searching prompts with term: {SearchTerm}", searchTerm);
+            throw;
+        }
+    }
+
+    public async Task<(IEnumerable<Prompt> Prompts, int TotalCount)> SearchPromptsPagedAsync(string searchTerm, int page = 1, int pageSize = 12)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return await GetPromptsPagedAsync(page, pageSize);
+
+            logger.LogDebug("Searching prompts with term: {SearchTerm}, page {Page}, size {PageSize}", searchTerm, page, pageSize);
+                
+            var lowerSearchTerm = searchTerm.ToLower();
+
+            var query = context.Prompts
+                .Include(p => p.Tags)
+                .Where(p => EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
+                            (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{lowerSearchTerm}%")) ||
+                            EF.Functions.Like(p.Content.ToLower(), $"%{lowerSearchTerm}%") ||
+                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%")))
+                .OrderByDescending(p => p.UpdatedAt)
+                .AsNoTracking();
+
+            var totalCount = await query.CountAsync();
+            
+            var prompts = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (prompts, totalCount);
         }
         catch (Exception ex)
         {
@@ -427,7 +500,39 @@ public class PromptService(
                 .Include(p => p.Tags)
                 .Where(p => p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
                 .OrderByDescending(p => p.UpdatedAt)
+                .AsNoTracking() // Performance optimization
                 .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving prompts by tag: {Tag}", tag);
+            throw;
+        }
+    }
+
+    public async Task<(IEnumerable<Prompt> Prompts, int TotalCount)> GetPromptsByTagPagedAsync(string tag, int page = 1, int pageSize = 12)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+                return await GetPromptsPagedAsync(page, pageSize);
+
+            logger.LogDebug("Retrieving prompts by tag: {Tag}, page {Page}, size {PageSize}", tag, page, pageSize);
+
+            var query = context.Prompts
+                .Include(p => p.Tags)
+                .Where(p => p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
+                .OrderByDescending(p => p.UpdatedAt)
+                .AsNoTracking();
+
+            var totalCount = await query.CountAsync();
+            
+            var prompts = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (prompts, totalCount);
         }
         catch (Exception ex)
         {
