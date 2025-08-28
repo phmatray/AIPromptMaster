@@ -4,57 +4,65 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an AI Prompt Manager built with Blazor Server (.NET 9) and Entity Framework Core with SQLite. The application helps users organize and manage AI prompts with tagging, search, and CRUD functionality.
+AI Prompt Manager - A Blazor Server application for organizing and managing AI prompts with enterprise-grade features including tagging, search, validation, performance monitoring, and storage management. The application has been recently integrated with .NET Aspire for cloud-native deployment and observability.
 
-## Technology Stack
+## Solution Structure
 
-- **Framework**: .NET 9 with Blazor Server
-- **Database**: SQLite with Entity Framework Core 9.0.7
-- **Styling**: Tailwind CSS with custom component classes
-- **Project Structure**: Single project at `AIPromptManager/`
+The solution consists of 4 projects:
+- **AIPromptManager**: Main Blazor Server application (UI and business logic)
+- **PromptMaster.AppHost**: Aspire orchestrator for local development
+- **PromptMaster.BackgroundProcessor**: Background processing service
+- **PromptMaster.ServiceDefaults**: Shared Aspire service defaults (health checks, telemetry)
 
 ## Common Development Commands
 
-### Build and Run
+### Running the Application
+
 ```bash
+# Standard run (AIPromptManager only)
 cd AIPromptManager
-dotnet build
 dotnet run
 
-# Run with specific environment
+# Run with Aspire orchestration (recommended for development)
+dotnet run --project PromptMaster.AppHost
+
+# Watch mode for development
+cd AIPromptManager
+dotnet watch run
+
+# Run specific environment
 dotnet run --environment Development
 dotnet run --environment Production
-
-# Watch mode for development (auto-rebuilds on changes)
-dotnet watch run
 ```
 
-### Database Operations
+### Database Management
+
 ```bash
 cd AIPromptManager
 
-# Add new migration
+# Create new migration
 dotnet ef migrations add MigrationName
 
-# Update database
+# Apply migrations
 dotnet ef database update
 
-# Remove last migration
+# Remove last migration (if not applied)
 dotnet ef migrations remove
 
-# Reset database (removes and recreates)
+# Reset database
 dotnet ef database drop -f
 dotnet ef database update
 ```
 
-### CSS Development
+### CSS/Tailwind Development
+
 ```bash
 cd AIPromptManager
 
-# Install npm dependencies (first time setup)
+# Install dependencies (first time)
 npm install
 
-# Watch mode for development
+# Watch mode for CSS development
 npm run build-css-watch
 
 # Production build (minified)
@@ -64,145 +72,141 @@ npm run build-css-prod
 npm run build-css
 ```
 
-### Testing
+### Testing & Quality
+
 ```bash
-# Run tests (when tests are added)
+# Run tests (when implemented)
 dotnet test
 
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Build solution
+dotnet build
 
-# Run specific test project
-dotnet test AIPromptManager.Tests
+# Clean and rebuild
+dotnet clean
+dotnet build
 ```
 
-### Port Configuration
-Default URLs: 
-- HTTP: http://localhost:5291
-- HTTPS: https://localhost:7134
+## Architecture & Key Components
 
-Configured in `Properties/launchSettings.json`
+### Core Architecture Pattern
+The application follows a Service Layer Pattern with dependency injection:
+1. **Controllers/Components** → Call services via interfaces
+2. **Services** → Implement business logic, handle errors
+3. **DbContext** → Manages database operations
+4. **Models** → Define domain entities
 
-## Architecture Overview
+### Service Layer (`AIPromptManager/Services/`)
+- **IPromptService**: CRUD operations, search, concurrency handling
+- **ITagService**: Tag management, orphan cleanup, duplicate prevention
+- **IValidationService**: Input validation, security checks
+- **IStorageService**: Storage monitoring, cleanup operations
+- **IPerformanceMonitoringService**: Performance metrics tracking
+- **IToastService**: Cross-component notifications (Singleton)
+- **ErrorHandlingService**: Global error handling
 
-### Core Domain Models (`Models/`)
-- **Prompt**: Main entity with Title, Description, Content, Tags collection, and optimistic concurrency control via RowVersion
-- **Tag**: Name (unique), Prompts collection for many-to-many relationship, CreatedAt timestamp
+### Data Layer
+- **Database**: SQLite with EF Core 9
+- **Concurrency**: Optimistic concurrency using RowVersion
+- **Relationships**: Many-to-many between Prompts and Tags
+- **Indexes**: Performance indexes on frequently queried columns
 
-### Data Access Layer (`Data/`)
-- **PromptManagerContext**: EF Core DbContext configuring entities, relationships, and constraints
-- **DbSeeder**: Populates initial sample data on application startup
-- **Migrations**: Database schema versioning in `Migrations/` folder
+### Aspire Integration
+- **Health Checks**: Available at `/health` and `/alive` endpoints
+- **OpenTelemetry**: Configured for metrics, tracing, and logging
+- **Service Discovery**: Enabled for inter-service communication
+- **Resilience**: Standard resilience handlers for HTTP clients
 
-### Service Layer Pattern (`Services/`)
-All business logic flows through services with dependency injection:
-- **IPromptService/PromptService**: CRUD operations, search, concurrency handling
-- **ITagService/TagService**: Tag creation, cleanup of unused tags, duplicate prevention
-- **IToastService/ToastService**: Cross-component notification system
-
-### Component Architecture
-- **Pages** (`Components/Pages/`): Route-based page components
-  - Home: Landing page with quick actions
-  - Prompts: List all prompts with filtering
-  - Create: New prompt creation
-  - Edit: Update existing prompts
-  - Search: Advanced search functionality
-- **Shared Components** (`Components/Shared/`): Reusable UI components
-  - PromptForm: Unified create/edit form
-  - TagInput: Tag management with autocomplete
-  - PromptCard/PromptList: Display components
-  - SearchBar: Real-time search filtering
-  - ToastContainer/Toast: Notification system
-  - ConfirmDialog: Deletion confirmation
-- **Layout** (`Components/Layout/`): Application shell
-  - MainLayout: Responsive sidebar/content layout
-  - NavMenu: Navigation with mobile support
-
-### Key Implementation Details
-
-1. **Concurrency Control**: 
-   - RowVersion byte[] property on Prompt entity
-   - DbUpdateConcurrencyException handling in services
-   - User-friendly conflict resolution messages
-
-2. **Tag Management**:
-   - Case-insensitive duplicate prevention
-   - Automatic cleanup of orphaned tags
-   - Many-to-many relationship via join table
-
-3. **Responsive Design**:
-   - Mobile-first approach with Tailwind CSS
-   - Custom breakpoints (xs: 475px)
-   - Collapsible sidebar navigation
-   - Touch-friendly components
-
-4. **State Management**:
-   - Blazor Server-side state management
-   - Service-scoped dependencies
-   - Toast notifications via singleton service
-
-### Database Schema
-
-```sql
-Prompts:
-- Id (int, PK)
-- Title (nvarchar(200), required)
-- Description (nvarchar(500))
-- Content (nvarchar(max), required)
-- CreatedAt (datetime2, required)
-- UpdatedAt (datetime2, required)
-- RowVersion (varbinary(max), concurrency token)
-
-Tags:
-- Id (int, PK)
-- Name (nvarchar(50), required, unique)
-- CreatedAt (datetime2, required)
-
-PromptTags (join table):
-- PromptId (int, FK)
-- TagId (int, FK)
-- PK: (PromptId, TagId)
+### Component Structure
+```
+Components/
+├── Pages/           # Routable pages
+├── Shared/          # Reusable components
+├── Layout/          # Application layout
+└── Features/        # Feature-specific components
 ```
 
-### Tailwind CSS Configuration
+## Key Implementation Notes
 
-- Source: `wwwroot/app.css`
-- Output: `wwwroot/dist/app.css`
-- Config: `tailwind.config.js`
-- Custom components documented in `TAILWIND_README.md`
-- Auto-built via MSBuild targets
+### Concurrent Edit Handling
+The application uses optimistic concurrency control:
+- `RowVersion` byte[] on Prompt entity
+- Catches `DbUpdateConcurrencyException`
+- Provides user-friendly conflict resolution
 
-### Development Workflow
+### Performance Optimizations
+- Compiled queries for frequently accessed data
+- Eager loading for related entities (Tags)
+- Performance indexes on search columns
+- Component-level optimization service
 
-1. **Adding a new feature**:
-   - Create/update domain models if needed
-   - Add EF migration: `dotnet ef migrations add FeatureName`
-   - Implement service interface and class
-   - Register service in `Program.cs`
-   - Create Razor components
-   - Update navigation if needed
+### Security & Validation
+- XSS prevention through input sanitization
+- SQL injection prevention via parameterized queries
+- Size limits on all text inputs
+- Global exception middleware
 
-2. **Modifying the database**:
-   - Update entity classes
-   - Update `PromptManagerContext` configuration
-   - Create migration: `dotnet ef migrations add MigrationName`
-   - Update database: `dotnet ef database update`
+### Storage Management
+- Automatic cleanup of orphaned data
+- Storage monitoring and alerts
+- Database size tracking
+- File attachment management (when implemented)
 
-3. **Adding new Tailwind styles**:
-   - Edit `wwwroot/app.css`
-   - Run `npm run build-css-watch` for development
-   - Styles auto-build on dotnet build
+### Responsive Design
+- Mobile-first with Tailwind CSS
+- Custom breakpoints (xs: 475px)
+- Touch-friendly interface
+- Collapsible navigation
 
-### Common Issues and Solutions
+## Development Workflow
 
-1. **Database locked**: Stop all running instances of the application
-2. **Migration conflicts**: Remove last migration and recreate
-3. **CSS not updating**: Ensure npm packages installed and rebuild
-4. **Concurrency errors**: Implement retry logic or user prompts
+### Adding New Features
+1. Update domain models if needed
+2. Create migration: `dotnet ef migrations add FeatureName`
+3. Implement service interface and class
+4. Register in `Program.cs`
+5. Create Razor components
+6. Update navigation if needed
 
-### Performance Considerations
+### Modifying Database Schema
+1. Update entity classes in `Models/`
+2. Update `PromptManagerContext` configuration
+3. Create migration: `dotnet ef migrations add MigrationName`
+4. Apply: `dotnet ef database update`
 
-- Blazor Server uses SignalR for real-time updates
-- Database queries use async/await patterns
-- Tag queries are optimized with includes
-- Consider pagination for large datasets (not yet implemented)
+### Working with Tailwind CSS
+1. Edit `wwwroot/app.css` for custom styles
+2. Run `npm run build-css-watch` during development
+3. Styles auto-rebuild on `dotnet build`
+
+## Port Configuration
+
+- **AIPromptManager**: http://localhost:5291, https://localhost:7134
+- **Aspire Dashboard**: http://localhost:15212 (when using AppHost)
+- **Background Processor**: http://localhost:5289, https://localhost:7233
+
+## Common Issues & Solutions
+
+| Issue | Solution |
+|-------|----------|
+| Database locked | Stop all application instances |
+| Migration conflicts | Remove last migration and recreate |
+| CSS not updating | Run `npm install` then rebuild |
+| Concurrency errors | Reload and retry the operation |
+| Aspire dashboard not opening | Ensure running via AppHost project |
+
+## Production Readiness Status
+
+Current implementation includes:
+- ✅ Core CRUD functionality
+- ✅ Error handling and validation
+- ✅ Performance monitoring
+- ✅ Storage management
+- ✅ Responsive design
+- ✅ Aspire integration
+
+Pending for production (see PRODUCTION_PLAN.md):
+- ⚠️ Unit and integration tests
+- ⚠️ Authentication/authorization
+- ⚠️ Rate limiting
+- ⚠️ Docker containerization
+- ⚠️ CI/CD pipeline

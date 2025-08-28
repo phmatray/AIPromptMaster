@@ -12,10 +12,12 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1"/>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.4.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AIPromptManager\AIPromptManager.csproj" />
+    <ProjectReference Include="..\PromptMaster.BackgroundProcessor\PromptMaster.BackgroundProcessor.csproj" />
   </ItemGroup>
 
 </Project>
