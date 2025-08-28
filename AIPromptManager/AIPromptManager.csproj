@@ -61,6 +61,10 @@
     <_ContentIncludedByDefault Remove="wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PromptMaster.ServiceDefaults\PromptMaster.ServiceDefaults.csproj" />
+  </ItemGroup>
+
   <!-- Tailwind CSS Build Process -->
   <Target Name="BuildTailwindCSS" BeforeTargets="Build">
     <Exec Command="npm install" WorkingDirectory="$(MSBuildProjectDirectory)" ContinueOnError="false" />

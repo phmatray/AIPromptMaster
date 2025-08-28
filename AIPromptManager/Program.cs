@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Aspire services to the container.
+builder.AddServiceDefaults();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -28,6 +31,8 @@ builder.Services.AddSingleton<IComponentOptimizationService, ComponentOptimizati
 builder.Services.AddHostedService<StorageCleanupService>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Seed the database
 using (var scope = app.Services.CreateScope())
