@@ -10,6 +10,7 @@
     <!-- Navigation Menu -->
     <nav class="flex-1 p-4" role="navigation" aria-label="Main navigation">
         <ul class="space-y-2" role="list">
+            <!-- Home - Always visible -->
             <li role="listitem">
                 <NavLink class="@GetNavLinkClasses()" 
                          href="" Match="NavLinkMatch.All"
@@ -20,55 +21,83 @@
                 </NavLink>
             </li>
 
-            <li role="listitem">
-                <NavLink class="@GetNavLinkClasses()" 
-                         href="prompts"
-                         @onclick="HandleNavClick"
-                         role="menuitem">
-                    <i class="fas fa-list-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
-                    <span class="truncate">My Prompts</span>
-                </NavLink>
-            </li>
+            <!-- Authentication-based navigation -->
+            <AuthorizeView>
+                <Authorized>
+                    <!-- Authenticated user menu items -->
+                    <li role="listitem">
+                        <NavLink class="@GetNavLinkClasses()" 
+                                 href="prompts"
+                                 @onclick="HandleNavClick"
+                                 role="menuitem">
+                            <i class="fas fa-list-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Browse Prompts</span>
+                        </NavLink>
+                    </li>
 
-            <li role="listitem">
-                <NavLink class="@GetNavLinkClasses()" 
-                         href="create"
-                         @onclick="HandleNavClick"
-                         role="menuitem">
-                    <i class="fas fa-plus-circle fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
-                    <span class="truncate">Create Prompt</span>
-                </NavLink>
-            </li>
+                    <li role="listitem">
+                        <NavLink class="@GetNavLinkClasses()" 
+                                 href="create"
+                                 @onclick="HandleNavClick"
+                                 role="menuitem">
+                            <i class="fas fa-plus-circle fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Create Prompt</span>
+                        </NavLink>
+                    </li>
 
-            <li role="listitem">
-                <NavLink class="@GetNavLinkClasses()" 
-                         href="search"
-                         @onclick="HandleNavClick"
-                         role="menuitem">
-                    <i class="fas fa-search fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
-                    <span class="truncate">Search</span>
-                </NavLink>
-            </li>
+                    <li role="listitem">
+                        <NavLink class="@GetNavLinkClasses()" 
+                                 href="search"
+                                 @onclick="HandleNavClick"
+                                 role="menuitem">
+                            <i class="fas fa-search fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Search</span>
+                        </NavLink>
+                    </li>
 
-            <li role="listitem">
-                <NavLink class="@GetNavLinkClasses()" 
-                         href="performance"
-                         @onclick="HandleNavClick"
-                         role="menuitem">
-                    <i class="fas fa-tachometer-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
-                    <span class="truncate">Performance</span>
-                </NavLink>
-            </li>
+                    <li role="listitem">
+                        <NavLink class="@GetNavLinkClasses()" 
+                                 href="performance"
+                                 @onclick="HandleNavClick"
+                                 role="menuitem">
+                            <i class="fas fa-tachometer-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Performance</span>
+                        </NavLink>
+                    </li>
 
-            <li role="listitem">
-                <NavLink class="@GetNavLinkClasses()" 
-                         href="responsive-test"
-                         @onclick="HandleNavClick"
-                         role="menuitem">
-                    <i class="fas fa-mobile-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
-                    <span class="truncate">Responsive Test</span>
-                </NavLink>
-            </li>
+                    <li role="listitem">
+                        <NavLink class="@GetNavLinkClasses()" 
+                                 href="responsive-test"
+                                 @onclick="HandleNavClick"
+                                 role="menuitem">
+                            <i class="fas fa-mobile-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Responsive Test</span>
+                        </NavLink>
+                    </li>
+                </Authorized>
+                <NotAuthorized>
+                    <!-- Unauthenticated user menu items - visible in mobile menu -->
+                    <li role="listitem" class="lg:hidden">
+                        <a class="@GetNavLinkClasses()" 
+                           href="/Identity/Account/Login"
+                           @onclick="HandleNavClick"
+                           role="menuitem">
+                            <i class="fas fa-sign-in-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Login</span>
+                        </a>
+                    </li>
+
+                    <li role="listitem" class="lg:hidden">
+                        <a class="@GetNavLinkClasses()" 
+                           href="/Identity/Account/Register"
+                           @onclick="HandleNavClick"
+                           role="menuitem">
+                            <i class="fas fa-user-plus fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                            <span class="truncate">Register</span>
+                        </a>
+                    </li>
+                </NotAuthorized>
+            </AuthorizeView>
         </ul>
     </nav>
 
