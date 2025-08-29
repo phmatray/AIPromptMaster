@@ -1,0 +1,61 @@
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="@GetMessageClasses()" role="alert" aria-live="polite">
+        <div class="flex items-center">
+            <i class="@GetIconClasses() mr-2" aria-hidden="true"></i>
+            <span>@Message</span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+
+    private string GetMessageClasses()
+    {
+        if (string.IsNullOrEmpty(Message))
+            return "";
+
+        var baseClasses = "p-4 mb-4 text-sm rounded-lg border";
+
+        if (Message.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseClasses} bg-red-50 border-red-200 text-red-800";
+        }
+        else if (Message.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseClasses} bg-yellow-50 border-yellow-200 text-yellow-800";
+        }
+        else if (Message.StartsWith("Success:", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseClasses} bg-green-50 border-green-200 text-green-800";
+        }
+        else
+        {
+            return $"{baseClasses} bg-blue-50 border-blue-200 text-blue-800";
+        }
+    }
+
+    private string GetIconClasses()
+    {
+        if (string.IsNullOrEmpty(Message))
+            return "";
+
+        if (Message.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fas fa-exclamation-circle text-red-500";
+        }
+        else if (Message.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fas fa-exclamation-triangle text-yellow-500";
+        }
+        else if (Message.StartsWith("Success:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fas fa-check-circle text-green-500";
+        }
+        else
+        {
+            return "fas fa-info-circle text-blue-500";
+        }
+    }
+}

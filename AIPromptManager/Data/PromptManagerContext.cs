@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using AIPromptManager.Models;
 
 namespace AIPromptManager.Data;
 
 public class PromptManagerContext(
     DbContextOptions<PromptManagerContext> options)
-    : DbContext(options)
+    : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Prompt> Prompts { get; set; }
     public DbSet<Tag> Tags { get; set; }
@@ -35,6 +37,13 @@ public class PromptManagerContext(
             entity.Property(p => p.UpdatedAt)
                 .IsRequired();
 
+            // Configure foreign key relationship with User
+            entity.HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Performance optimization: Add indexes for common queries
             entity.HasIndex(p => p.UpdatedAt)
                 .HasDatabaseName("IX_Prompts_UpdatedAt");
@@ -44,6 +53,9 @@ public class PromptManagerContext(
                 
             entity.HasIndex(p => p.Title)
                 .HasDatabaseName("IX_Prompts_Title");
+
+            entity.HasIndex(p => p.UserId)
+                .HasDatabaseName("IX_Prompts_UserId");
 
             // Configure many-to-many relationship with Tags
             entity.HasMany(p => p.Tags)
@@ -77,6 +89,24 @@ public class PromptManagerContext(
             // Create unique index on Name to prevent duplicate tags
             entity.HasIndex(t => t.Name)
                 .IsUnique();
+        });
+
+        // Configure ApplicationUser entity
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            // Configure JSON column for UserPreferences (PostgreSQL uses jsonb)
+            entity.Property(e => e.Preferences)
+                .HasConversion(
+                    v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<UserPreferences>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                .HasColumnType("jsonb");
+
+            // Add indexes for performance
+            entity.HasIndex(e => e.CreatedAt)
+                .HasDatabaseName("IX_ApplicationUsers_CreatedAt");
+                
+            entity.HasIndex(e => e.UpdatedAt)
+                .HasDatabaseName("IX_ApplicationUsers_UpdatedAt");
         });
     }
 }

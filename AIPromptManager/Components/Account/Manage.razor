@@ -1,0 +1,369 @@
+@page "/Account/Manage"
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+@using AIPromptManager.Models
+@attribute [Authorize]
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Manage your account</PageTitle>
+
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Account Management</h1>
+            <p class="text-gray-600">Manage your account settings and preferences</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Navigation Menu -->
+            <div class="lg:col-span-1">
+                <nav class="card sticky top-8">
+                    <div class="card-header">
+                        <h3 class="text-lg font-medium text-gray-900">Settings</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="divide-y divide-gray-200">
+                            <li>
+                                <button @onclick="() => SetActiveSection(ManageSection.Profile)" 
+                                        class="w-full text-left px-6 py-4 hover:bg-gray-50 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset @GetSectionClasses(ManageSection.Profile)">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-user mr-3 text-gray-400" aria-hidden="true"></i>
+                                        Profile
+                                    </span>
+                                    @if (_activeSection == ManageSection.Profile)
+                                    {
+                                        <i class="fas fa-chevron-right text-blue-600" aria-hidden="true"></i>
+                                    }
+                                </button>
+                            </li>
+                            <li>
+                                <button @onclick="() => SetActiveSection(ManageSection.Email)" 
+                                        class="w-full text-left px-6 py-4 hover:bg-gray-50 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset @GetSectionClasses(ManageSection.Email)">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-envelope mr-3 text-gray-400" aria-hidden="true"></i>
+                                        Email
+                                    </span>
+                                    @if (_activeSection == ManageSection.Email)
+                                    {
+                                        <i class="fas fa-chevron-right text-blue-600" aria-hidden="true"></i>
+                                    }
+                                </button>
+                            </li>
+                            <li>
+                                <button @onclick="() => SetActiveSection(ManageSection.Password)" 
+                                        class="w-full text-left px-6 py-4 hover:bg-gray-50 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset @GetSectionClasses(ManageSection.Password)">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-lock mr-3 text-gray-400" aria-hidden="true"></i>
+                                        Password
+                                    </span>
+                                    @if (_activeSection == ManageSection.Password)
+                                    {
+                                        <i class="fas fa-chevron-right text-blue-600" aria-hidden="true"></i>
+                                    }
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Content Area -->
+            <div class="lg:col-span-2">
+                @if (_activeSection == ManageSection.Profile)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-medium text-gray-900">Profile Information</h3>
+                            <p class="text-sm text-gray-600">Update your account's profile information.</p>
+                        </div>
+                        <div class="card-body">
+                            <StatusMessage Message="@_statusMessage" />
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label">Username</label>
+                                    <input type="text" value="@_currentUser?.UserName" disabled class="form-input bg-gray-100" />
+                                    <p class="text-sm text-gray-500 mt-1">Your username cannot be changed.</p>
+                                </div>
+                                <div>
+                                    <label class="form-label">Email</label>
+                                    <input type="email" value="@_currentUser?.Email" disabled class="form-input bg-gray-100" />
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        To change your email, use the Email section.
+                                        @if (!_isEmailConfirmed)
+                                        {
+                                            <span class="text-yellow-600 font-medium">
+                                                <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
+                                                Email not confirmed.
+                                            </span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_activeSection == ManageSection.Email)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-medium text-gray-900">Change Email</h3>
+                            <p class="text-sm text-gray-600">Update your email address.</p>
+                        </div>
+                        <div class="card-body">
+                            <StatusMessage Message="@_statusMessage" />
+                            
+                            <EditForm Model="EmailInput" OnValidSubmit="OnChangeEmailAsync" FormName="change-email">
+                                <DataAnnotationsValidator />
+                                
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="email" class="form-label">Current Email</label>
+                                        <input type="email" value="@_email" disabled class="form-input bg-gray-100" />
+                                    </div>
+                                    <div>
+                                        <label for="new-email" class="form-label">New Email</label>
+                                        <InputText @bind-Value="EmailInput.NewEmail" 
+                                                  id="new-email" 
+                                                  class="form-input" 
+                                                  autocomplete="email" 
+                                                  aria-required="true" 
+                                                  placeholder="Enter new email address" />
+                                        <ValidationMessage For="() => EmailInput.NewEmail" class="validation-message" />
+                                    </div>
+                                    <div>
+                                        <button type="submit" disabled="@_isLoading" class="btn-primary @(_isLoading ? "opacity-50 cursor-not-allowed" : "")">
+                                            @if (_isLoading)
+                                            {
+                                                <i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+                                                <span>Updating...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Change email</span>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                }
+                else if (_activeSection == ManageSection.Password)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-medium text-gray-900">Change Password</h3>
+                            <p class="text-sm text-gray-600">Update your password to keep your account secure.</p>
+                        </div>
+                        <div class="card-body">
+                            <StatusMessage Message="@_statusMessage" />
+                            
+                            <EditForm Model="PasswordInput" OnValidSubmit="OnChangePasswordAsync" FormName="change-password">
+                                <DataAnnotationsValidator />
+                                
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="old-password" class="form-label">Current Password</label>
+                                        <InputText @bind-Value="PasswordInput.OldPassword" 
+                                                  type="password" 
+                                                  id="old-password" 
+                                                  class="form-input" 
+                                                  autocomplete="current-password" 
+                                                  aria-required="true" 
+                                                  placeholder="Enter current password" />
+                                        <ValidationMessage For="() => PasswordInput.OldPassword" class="validation-message" />
+                                    </div>
+                                    <div>
+                                        <label for="new-password" class="form-label">New Password</label>
+                                        <InputText @bind-Value="PasswordInput.NewPassword" 
+                                                  type="password" 
+                                                  id="new-password" 
+                                                  class="form-input" 
+                                                  autocomplete="new-password" 
+                                                  aria-required="true" 
+                                                  placeholder="Create new password" />
+                                        <ValidationMessage For="() => PasswordInput.NewPassword" class="validation-message" />
+                                    </div>
+                                    <div>
+                                        <label for="confirm-password" class="form-label">Confirm New Password</label>
+                                        <InputText @bind-Value="PasswordInput.ConfirmPassword" 
+                                                  type="password" 
+                                                  id="confirm-password" 
+                                                  class="form-input" 
+                                                  autocomplete="new-password" 
+                                                  aria-required="true" 
+                                                  placeholder="Confirm new password" />
+                                        <ValidationMessage For="() => PasswordInput.ConfirmPassword" class="validation-message" />
+                                    </div>
+                                    <div>
+                                        <button type="submit" disabled="@_isLoading" class="btn-primary @(_isLoading ? "opacity-50 cursor-not-allowed" : "")">
+                                            @if (_isLoading)
+                                            {
+                                                <i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+                                                <span>Updating...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Update password</span>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ApplicationUser _currentUser = default!;
+    private string? _email;
+    private bool _isEmailConfirmed;
+    private string? _statusMessage;
+    private bool _isLoading;
+    private ManageSection _activeSection = ManageSection.Profile;
+
+    [SupplyParameterFromForm(FormName = "change-email")]
+    private ChangeEmailInputModel EmailInput { get; set; } = new();
+
+    [SupplyParameterFromForm(FormName = "change-password")]
+    private ChangePasswordInputModel PasswordInput { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await UserAccessor.GetRequiredUserAsync();
+        _email = await UserManager.GetEmailAsync(_currentUser);
+        _isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(_currentUser);
+    }
+
+    private void SetActiveSection(ManageSection section)
+    {
+        _activeSection = section;
+        _statusMessage = null; // Clear status message when switching sections
+        StateHasChanged();
+    }
+
+    private string GetSectionClasses(ManageSection section)
+    {
+        return _activeSection == section ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" : "";
+    }
+
+    private async Task OnChangeEmailAsync()
+    {
+        _isLoading = true;
+        _statusMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            if (_email != EmailInput.NewEmail)
+            {
+                var userId = await UserManager.GetUserIdAsync(_currentUser);
+                var code = await UserManager.GenerateChangeEmailTokenAsync(_currentUser, EmailInput.NewEmail);
+                
+                // In a real application, send the email with the code
+                _statusMessage = "Success: Confirmation email sent. Please check your email to complete the email change.";
+                
+                // For development, we'll log the change
+                var result = await UserManager.ChangeEmailAsync(_currentUser, EmailInput.NewEmail, code);
+                if (result.Succeeded)
+                {
+                    _statusMessage = "Success: Email changed successfully.";
+                    _email = EmailInput.NewEmail;
+                    EmailInput = new();
+                }
+                else
+                {
+                    _statusMessage = $"Error: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+                }
+            }
+            else
+            {
+                _statusMessage = "Error: Your email is already set to this address.";
+            }
+        }
+        catch (Exception)
+        {
+            _statusMessage = "Error: An unexpected error occurred while changing your email.";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnChangePasswordAsync()
+    {
+        _isLoading = true;
+        _statusMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(_currentUser, PasswordInput.OldPassword, PasswordInput.NewPassword);
+            
+            if (result.Succeeded)
+            {
+                await SignInManager.RefreshSignInAsync(_currentUser);
+                _statusMessage = "Success: Your password has been changed.";
+                PasswordInput = new();
+            }
+            else
+            {
+                _statusMessage = $"Error: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+            }
+        }
+        catch (Exception)
+        {
+            _statusMessage = "Error: An unexpected error occurred while changing your password.";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private enum ManageSection
+    {
+        Profile,
+        Email,
+        Password
+    }
+
+    private sealed class ChangeEmailInputModel
+    {
+        [Required(ErrorMessage = "New email is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        [Display(Name = "New email")]
+        public string NewEmail { get; set; } = "";
+    }
+
+    private sealed class ChangePasswordInputModel
+    {
+        [Required(ErrorMessage = "Current password is required")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Current password")]
+        public string OldPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "New password is required")]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 8)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string NewPassword { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

@@ -65,6 +65,7 @@ public class ErrorHandlingService(
         {
             ArgumentNullException => "Required information is missing. Please check your input and try again.",
             ArgumentException argEx => argEx.Message,
+            UnauthorizedAccessException => "Access denied. You don't have permission to perform this action.",
             InvalidOperationException invalidEx when invalidEx.Message.Contains("not found") => 
                 "The requested item could not be found. It may have been deleted by another user.",
             InvalidOperationException invalidEx when invalidEx.Message.Contains("modified by another user") => 

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email - {{AppName}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #28a745;
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px;
+            line-height: 1.6;
+            color: #333333;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirm Your Email Address</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{UserName}}</strong>,</p>
+            
+            <p>Thank you for registering with {{AppName}}! To complete your account setup and start using our services, please confirm your email address by clicking the button below:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ConfirmationLink}}" class="btn">Confirm My Email</a>
+            </div>
+            
+            <div class="info">
+                <strong>What happens next?</strong> Once you confirm your email, you'll have full access to all {{AppName}} features and can start managing your AI prompts right away.
+            </div>
+            
+            <p>If the button above doesn't work, you can copy and paste the following link into your browser:</p>
+            <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace;">{{ConfirmationLink}}</p>
+            
+            <p><strong>Important:</strong> If you didn't create an account with {{AppName}}, please ignore this email.</p>
+            
+            <p>Welcome aboard!<br>
+            The {{AppName}} Team</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from {{AppName}}. Please do not reply to this email.</p>
+            <p>&copy; 2024 {{AppName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
