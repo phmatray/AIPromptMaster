@@ -1,0 +1,66 @@
+@using Microsoft.AspNetCore.Identity
+
+<AuthorizeView>
+    <Authorized>
+        <div class="flex items-center space-x-3">
+            <!-- User info -->
+            <div class="flex items-center space-x-2">
+                <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <i class="fas fa-user text-white text-sm" aria-hidden="true"></i>
+                </div>
+                <span class="hidden sm:block text-gray-700 font-medium">@GetDisplayName(context)</span>
+            </div>
+            
+            <!-- Action buttons -->
+            <div class="flex items-center space-x-2">
+                <a href="Account/Manage" 
+                   class="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1">
+                    <i class="fas fa-cog mr-1" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Manage</span>
+                </a>
+                
+                <form action="Account/Logout" method="post" class="inline">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@NavigationManager.ToBaseRelativePath(NavigationManager.Uri)" />
+                    <button type="submit" 
+                            class="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1">
+                        <i class="fas fa-sign-out-alt mr-1" aria-hidden="true"></i>
+                        <span class="hidden sm:inline">Sign out</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="flex items-center space-x-3">
+            <a href="Account/Register" 
+               class="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1">
+                Register
+            </a>
+            <a href="Account/Login" 
+               class="btn-primary btn-sm">
+                <i class="fas fa-sign-in-alt mr-2" aria-hidden="true"></i>
+                Sign in
+            </a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@inject NavigationManager NavigationManager
+
+@code {
+    private string GetDisplayName(AuthenticationState context)
+    {
+        var identity = context.User.Identity;
+        if (identity?.Name is null) return "User";
+
+        // If it looks like an email, extract the part before @
+        if (identity.Name.Contains('@'))
+        {
+            var emailParts = identity.Name.Split('@');
+            return emailParts.Length > 0 ? emailParts[0] : identity.Name;
+        }
+        
+        return identity.Name;
+    }
+}

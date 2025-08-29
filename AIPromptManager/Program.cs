@@ -39,9 +39,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 // Configure cookie authentication for Blazor Server
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Identity/Account/Login";
-    options.LogoutPath = "/Identity/Account/Logout";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
     
     // Cookie settings
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
@@ -55,6 +55,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add HttpContextAccessor for Blazor Server
+builder.Services.AddHttpContextAccessor();
+
 // Add services
 builder.Services.AddScoped<IValidationService, ValidationService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
@@ -64,6 +67,9 @@ builder.Services.AddScoped<IToastService, ToastService>();
 builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
 builder.Services.AddScoped<IPerformanceMonitoringService, PerformanceMonitoringService>();
 builder.Services.AddSingleton<IComponentOptimizationService, ComponentOptimizationService>();
+builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<IdentityUserAccessor>();
+builder.Services.AddScoped<AIPromptManager.Services.IEmailSender<IdentityUser>, EmailSender>();
 
 // Add background services
 builder.Services.AddHostedService<StorageCleanupService>();
@@ -98,5 +104,23 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Map logout endpoint
+app.MapPost("/Account/Logout", async (HttpContext context, SignInManager<IdentityUser> signInManager, ILogger<Program> logger) =>
+{
+    if (signInManager.IsSignedIn(context.User))
+    {
+        await signInManager.SignOutAsync();
+        logger.LogInformation("User logged out.");
+    }
+    
+    var returnUrl = context.Request.Form["ReturnUrl"].FirstOrDefault();
+    if (!string.IsNullOrEmpty(returnUrl) && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative))
+    {
+        return Results.Redirect(returnUrl);
+    }
+    
+    return Results.Redirect("/");
+});
 
 app.Run();
