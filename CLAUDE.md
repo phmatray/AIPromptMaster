@@ -210,3 +210,54 @@ Pending for production (see PRODUCTION_PLAN.md):
 - ⚠️ Rate limiting
 - ⚠️ Docker containerization
 - ⚠️ CI/CD pipeline
+
+## Important Development Rules
+
+> Think carefully and implement the most concise solution that changes as little code as possible.
+
+### Sub-Agent Usage for Context Optimization
+
+1. **File Analysis**: Always use the file-analyzer sub-agent when asked to read files. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+
+2. **Code Analysis**: Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace logic flow. It specializes in code analysis, logic tracing, and vulnerability detection.
+
+3. **Test Execution**: Always use the test-runner sub-agent to run tests and analyze results. This ensures full test output capture, clean conversation flow, optimized context usage, and proper issue surfacing.
+
+### Development Philosophy
+
+#### Error Handling
+- **Fail fast** for critical configuration (missing text model)
+- **Log and continue** for optional features (extraction model)
+- **Graceful degradation** when external services unavailable
+- **User-friendly messages** through resilience layer
+
+#### Testing Approach
+- Always use the test-runner agent to execute tests
+- Do not use mock services for anything ever
+- Do not move on to the next test until the current test is complete
+- If a test fails, check if the test is structured correctly before refactoring
+- Tests should be verbose for debugging purposes
+
+### Code Quality Standards
+
+#### Absolute Rules
+- **NO PARTIAL IMPLEMENTATION** - Complete all features fully
+- **NO SIMPLIFICATION** - No "simplified for now" implementations
+- **NO CODE DUPLICATION** - Check existing codebase and reuse functions/constants
+- **NO DEAD CODE** - Either use code or delete it completely
+- **IMPLEMENT TESTS** - Test every function thoroughly
+- **NO CHEATER TESTS** - Tests must be accurate, reflect real usage, and reveal flaws
+- **NO INCONSISTENT NAMING** - Follow existing codebase naming patterns
+- **NO OVER-ENGINEERING** - Avoid unnecessary abstractions when simple functions work
+- **NO MIXED CONCERNS** - Maintain proper separation of concerns
+- **NO RESOURCE LEAKS** - Always clean up connections, timeouts, listeners, and handles
+
+### Communication Guidelines
+
+- Welcome criticism and corrections
+- Appreciate suggestions for better approaches
+- Value feedback about standards and conventions
+- Be skeptical and concise
+- Provide short summaries unless detailed planning is needed
+- Avoid flattery and unnecessary compliments
+- Ask questions when intent is unclear rather than guessing
