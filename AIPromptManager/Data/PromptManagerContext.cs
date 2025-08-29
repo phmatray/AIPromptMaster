@@ -37,6 +37,13 @@ public class PromptManagerContext(
             entity.Property(p => p.UpdatedAt)
                 .IsRequired();
 
+            // Configure foreign key relationship with User
+            entity.HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Performance optimization: Add indexes for common queries
             entity.HasIndex(p => p.UpdatedAt)
                 .HasDatabaseName("IX_Prompts_UpdatedAt");
@@ -46,6 +53,9 @@ public class PromptManagerContext(
                 
             entity.HasIndex(p => p.Title)
                 .HasDatabaseName("IX_Prompts_Title");
+
+            entity.HasIndex(p => p.UserId)
+                .HasDatabaseName("IX_Prompts_UserId");
 
             // Configure many-to-many relationship with Tags
             entity.HasMany(p => p.Tags)

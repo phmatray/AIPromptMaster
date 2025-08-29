@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace AIPromptManager.Models;
 
@@ -15,6 +16,12 @@ public class Prompt
 
     [Required(ErrorMessage = "Content is required")]
     public string Content { get; set; } = string.Empty;
+
+    // Foreign key to User - nullable to preserve existing data
+    public string? UserId { get; set; }
+
+    // Navigation property to User
+    public virtual IdentityUser? User { get; set; }
 
     // Navigation property for many-to-many relationship
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
