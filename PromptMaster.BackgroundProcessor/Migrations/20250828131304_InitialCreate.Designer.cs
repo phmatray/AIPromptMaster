@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using PromptMaster.BackgroundProcessor.Data;
 
 #nullable disable
 
 namespace PromptMaster.BackgroundProcessor.Migrations
 {
-    [DbContext(typeof(MyDbContext))]
+    [DbContext(typeof(BackgroundProcessorContext))]
     [Migration("20250828131304_InitialCreate")]
     partial class InitialCreate
     {

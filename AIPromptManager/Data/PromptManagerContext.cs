@@ -3,7 +3,9 @@ using AIPromptManager.Models;
 
 namespace AIPromptManager.Data;
 
-public class PromptManagerContext(DbContextOptions<PromptManagerContext> options) : DbContext(options)
+public class PromptManagerContext(
+    DbContextOptions<PromptManagerContext> options)
+    : DbContext(options)
 {
     public DbSet<Prompt> Prompts { get; set; }
     public DbSet<Tag> Tags { get; set; }

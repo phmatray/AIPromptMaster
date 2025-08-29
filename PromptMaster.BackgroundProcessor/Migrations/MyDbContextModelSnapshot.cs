@@ -4,12 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using PromptMaster.BackgroundProcessor.Data;
 
 #nullable disable
 
 namespace PromptMaster.BackgroundProcessor.Migrations
 {
-    [DbContext(typeof(MyDbContext))]
+    [DbContext(typeof(BackgroundProcessorContext))]
     partial class MyDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

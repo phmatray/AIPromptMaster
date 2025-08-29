@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using TickerQ.EntityFrameworkCore.Configurations;
 
-public class MyDbContext : DbContext
-{
-    public MyDbContext(DbContextOptions<MyDbContext> options)
-        : base(options) { }
+namespace PromptMaster.BackgroundProcessor.Data;
 
+public class BackgroundProcessorContext(
+    DbContextOptions<BackgroundProcessorContext> options)
+    : DbContext(options)
+{
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

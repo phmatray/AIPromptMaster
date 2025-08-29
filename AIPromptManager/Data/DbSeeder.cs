@@ -5,37 +5,40 @@ namespace AIPromptManager.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(PromptManagerContext context)
+    public static async Task SeedAsync(PromptManagerContext dbContext)
     {
         // Ensure database is created
-        await context.Database.EnsureCreatedAsync();
+        await dbContext.Database.EnsureCreatedAsync();
+        
+        // Apply any pending migrations
+        await dbContext.Database.MigrateAsync();
 
         // Check if data already exists
-        if (await context.Prompts.AnyAsync() || await context.Tags.AnyAsync())
+        if (await dbContext.Prompts.AnyAsync() || await dbContext.Tags.AnyAsync())
         {
             return; // Database has been seeded
         }
 
         // Create sample tags
-        var tags = new List<Tag>
-        {
-            new Tag { Name = "Writing", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Code", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Analysis", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Creative", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Business", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Technical", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Research", CreatedAt = DateTime.UtcNow },
-            new Tag { Name = "Marketing", CreatedAt = DateTime.UtcNow }
-        };
+        List<Tag> tags =
+        [
+            new() { Name = "Writing", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Code", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Analysis", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Creative", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Business", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Technical", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Research", CreatedAt = DateTime.UtcNow },
+            new() { Name = "Marketing", CreatedAt = DateTime.UtcNow }
+        ];
 
-        await context.Tags.AddRangeAsync(tags);
-        await context.SaveChangesAsync();
+        await dbContext.Tags.AddRangeAsync(tags);
+        await dbContext.SaveChangesAsync();
 
         // Create sample prompts
-        var prompts = new List<Prompt>
-        {
-            new Prompt
+        List<Prompt> prompts =
+        [
+            new()
             {
                 Title = "Code Review Assistant",
                 Description = "A prompt for reviewing code and providing constructive feedback",
@@ -44,7 +47,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[1], tags[5] } // Code, Technical
             },
-            new Prompt
+
+            new()
             {
                 Title = "Blog Post Writer",
                 Description = "Generate engaging blog posts on various topics",
@@ -53,7 +57,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[0], tags[3], tags[7] } // Writing, Creative, Marketing
             },
-            new Prompt
+
+            new()
             {
                 Title = "Data Analysis Helper",
                 Description = "Analyze datasets and provide insights",
@@ -62,7 +67,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[2], tags[5], tags[6] } // Analysis, Technical, Research
             },
-            new Prompt
+
+            new()
             {
                 Title = "Meeting Summary Generator",
                 Description = "Create structured summaries from meeting notes",
@@ -71,7 +77,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[4], tags[0] } // Business, Writing
             },
-            new Prompt
+
+            new()
             {
                 Title = "Creative Story Starter",
                 Description = "Generate creative story beginnings and plot ideas",
@@ -80,7 +87,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[3], tags[0] } // Creative, Writing
             },
-            new Prompt
+
+            new()
             {
                 Title = "API Documentation Generator",
                 Description = "Create comprehensive API documentation",
@@ -89,7 +97,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[1], tags[5], tags[0] } // Code, Technical, Writing
             },
-            new Prompt
+
+            new()
             {
                 Title = "Market Research Analyst",
                 Description = "Conduct market analysis and competitive research",
@@ -98,7 +107,8 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[4], tags[6], tags[2] } // Business, Research, Analysis
             },
-            new Prompt
+
+            new()
             {
                 Title = "SQL Query Optimizer",
                 Description = "Optimize SQL queries for better performance",
@@ -107,9 +117,9 @@ public static class DbSeeder
                 UpdatedAt = DateTime.UtcNow,
                 Tags = new List<Tag> { tags[1], tags[5], tags[2] } // Code, Technical, Analysis
             }
-        };
+        ];
 
-        await context.Prompts.AddRangeAsync(prompts);
-        await context.SaveChangesAsync();
+        await dbContext.Prompts.AddRangeAsync(prompts);
+        await dbContext.SaveChangesAsync();
     }
 }

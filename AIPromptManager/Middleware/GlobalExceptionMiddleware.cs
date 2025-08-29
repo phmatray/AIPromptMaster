@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AIPromptManager.Middleware;
 
@@ -30,10 +30,10 @@ public class GlobalExceptionMiddleware(
 
         switch (exception)
         {
-            case SqliteException sqliteEx:
+            case NpgsqlException npgsqlException:
                 response.Message = "Database operation failed. Please try again.";
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Details = GetDatabaseErrorDetails(sqliteEx);
+                response.Details = npgsqlException.InnerException?.Message ?? npgsqlException.Message;
                 break;
                 
             case DbUpdateConcurrencyException concurrencyEx:
@@ -45,7 +45,7 @@ public class GlobalExceptionMiddleware(
             case DbUpdateException dbEx:
                 response.Message = "Failed to save changes. Please check your input and try again.";
                 response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.Details = GetDatabaseErrorDetails(dbEx);
+                response.Details = dbEx.InnerException?.Message ?? dbEx.Message;
                 break;
                 
             case ArgumentException argEx:
@@ -96,17 +96,6 @@ public class GlobalExceptionMiddleware(
         });
 
         await context.Response.WriteAsync(jsonResponse);
-    }
-
-    private static string GetDatabaseErrorDetails(Exception exception)
-    {
-        return exception switch
-        {
-            SqliteException { SqliteErrorCode: 19 } => "A record with this information already exists.",
-            SqliteException { SqliteErrorCode: 1 } => "Database operation failed due to SQL error.",
-            DbUpdateException { InnerException: SqliteException { SqliteErrorCode: 19 } } => "A record with this information already exists.",
-            _ => "Database operation failed."
-        };
     }
 
     public class ErrorResponse

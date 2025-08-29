@@ -4,15 +4,18 @@ var postgres = builder
     .AddPostgres("postgres")
     .WithPgWeb();
 
-var postgresdb = postgres
-    .AddDatabase("postgresdb");
+var bgProcessorDb = postgres
+    .AddDatabase("bg-processor-db");
 
-
+var promptManagerDb = postgres
+    .AddDatabase("prompt-manager-db");
 
 builder.AddProject<Projects.PromptMaster_BackgroundProcessor>("bg-processor")
-    .WithReference(postgresdb)
-    .WaitFor(postgresdb);
+    .WithReference(bgProcessorDb)
+    .WaitFor(bgProcessorDb);
     
-builder.AddProject<Projects.AIPromptManager>("aipromptmanager");
+builder.AddProject<Projects.AIPromptManager>("aipromptmanager")
+    .WithReference(promptManagerDb)
+    .WaitFor(promptManagerDb);
 
 builder.Build().Run();
