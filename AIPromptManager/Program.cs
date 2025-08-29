@@ -56,8 +56,7 @@ builder.Services.AddAuthorization();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddAuthenticationStateSerialization();
+    .AddInteractiveServerComponents();
 
 // Add HttpContextAccessor for Blazor Server
 builder.Services.AddHttpContextAccessor();
