@@ -27,9 +27,11 @@ public class PromptService(
         {
             try
             {
-                logger.LogDebug("Retrieving all prompts");
+                var currentUserId = GetCurrentUserId();
+                logger.LogDebug("Retrieving all prompts for user: {UserId}", currentUserId);
                 return await context.Prompts
                     .Include(p => p.Tags)
+                    .Where(p => p.UserId == currentUserId || p.UserId == null) // Include legacy data with null UserId
                     .OrderByDescending(p => p.UpdatedAt)
                     .AsNoTracking() // Performance optimization: don't track entities for read-only operations
                     .ToListAsync();
@@ -48,10 +50,12 @@ public class PromptService(
         {
             try
             {
-                logger.LogDebug("Retrieving prompts page {Page} with size {PageSize}", page, pageSize);
+                var currentUserId = GetCurrentUserId();
+                logger.LogDebug("Retrieving prompts page {Page} with size {PageSize} for user: {UserId}", page, pageSize, currentUserId);
                 
                 var query = context.Prompts
                     .Include(p => p.Tags)
+                    .Where(p => p.UserId == currentUserId || p.UserId == null) // Include legacy data with null UserId
                     .OrderByDescending(p => p.UpdatedAt)
                     .AsNoTracking();
 
@@ -76,11 +80,22 @@ public class PromptService(
     {
         try
         {
-            logger.LogDebug("Retrieving prompt with ID: {PromptId}", id);
-            return await context.Prompts
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Retrieving prompt with ID: {PromptId} for user: {UserId}", id, currentUserId);
+            
+            var prompt = await context.Prompts
                 .Include(p => p.Tags)
                 .AsNoTracking() // Performance optimization for read-only operations
                 .FirstOrDefaultAsync(p => p.Id == id);
+            
+            if (prompt != null && prompt.UserId != null && prompt.UserId != currentUserId)
+            {
+                logger.LogWarning("User {UserId} attempted to access prompt {PromptId} owned by {OwnerId}", 
+                    currentUserId, id, prompt.UserId);
+                throw new UnauthorizedAccessException("You do not have permission to access this prompt");
+            }
+            
+            return prompt;
         }
         catch (Exception ex)
         {
@@ -133,7 +148,9 @@ public class PromptService(
         try
         {
             logger.LogDebug("Creating new prompt: {PromptTitle}", prompt.Title);
-                
+            
+            // Automatically set the current user as the owner
+            prompt.UserId = GetCurrentUserId();
             prompt.CreatedAt = DateTime.UtcNow;
             prompt.UpdatedAt = DateTime.UtcNow;
 
@@ -268,7 +285,8 @@ public class PromptService(
 
         try
         {
-            logger.LogDebug("Updating prompt with ID: {PromptId}", prompt.Id);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Updating prompt with ID: {PromptId} for user: {UserId}", prompt.Id, currentUserId);
                 
             var existingPrompt = await context.Prompts
                 .Include(p => p.Tags)
@@ -276,6 +294,14 @@ public class PromptService(
 
             if (existingPrompt == null)
                 throw new InvalidOperationException($"Prompt with ID {prompt.Id} not found");
+            
+            // Verify ownership before allowing updates
+            if (existingPrompt.UserId != null && existingPrompt.UserId != currentUserId)
+            {
+                logger.LogWarning("User {UserId} attempted to update prompt {PromptId} owned by {OwnerId}", 
+                    currentUserId, prompt.Id, existingPrompt.UserId);
+                throw new UnauthorizedAccessException("You do not have permission to update this prompt");
+            }
 
             // Set the original RowVersion for optimistic concurrency
             if (prompt.RowVersion != null)
@@ -414,11 +440,20 @@ public class PromptService(
     {
         try
         {
-            logger.LogDebug("Deleting prompt with ID: {PromptId}", id);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Deleting prompt with ID: {PromptId} for user: {UserId}", id, currentUserId);
                 
             var prompt = await context.Prompts.FindAsync(id);
             if (prompt == null)
                 throw new InvalidOperationException($"Prompt with ID {id} not found");
+            
+            // Verify ownership before allowing deletion
+            if (prompt.UserId != null && prompt.UserId != currentUserId)
+            {
+                logger.LogWarning("User {UserId} attempted to delete prompt {PromptId} owned by {OwnerId}", 
+                    currentUserId, id, prompt.UserId);
+                throw new UnauthorizedAccessException("You do not have permission to delete this prompt");
+            }
 
             context.Prompts.Remove(prompt);
             await context.SaveChangesAsync();
@@ -439,16 +474,18 @@ public class PromptService(
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return await GetAllPromptsAsync();
 
-            logger.LogDebug("Searching prompts with term: {SearchTerm}", searchTerm);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Searching prompts with term: {SearchTerm} for user: {UserId}", searchTerm, currentUserId);
                 
             var lowerSearchTerm = searchTerm.ToLower();
 
             return await context.Prompts
                 .Include(p => p.Tags)
-                .Where(p => EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
+                .Where(p => (p.UserId == currentUserId || p.UserId == null) && // Include legacy data with null UserId
+                            (EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
                             (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{lowerSearchTerm}%")) ||
                             EF.Functions.Like(p.Content.ToLower(), $"%{lowerSearchTerm}%") ||
-                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%")))
+                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%"))))
                 .OrderByDescending(p => p.UpdatedAt)
                 .AsNoTracking() // Performance optimization
                 .ToListAsync();
@@ -467,16 +504,18 @@ public class PromptService(
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return await GetPromptsPagedAsync(page, pageSize);
 
-            logger.LogDebug("Searching prompts with term: {SearchTerm}, page {Page}, size {PageSize}", searchTerm, page, pageSize);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Searching prompts with term: {SearchTerm}, page {Page}, size {PageSize} for user: {UserId}", searchTerm, page, pageSize, currentUserId);
                 
             var lowerSearchTerm = searchTerm.ToLower();
 
             var query = context.Prompts
                 .Include(p => p.Tags)
-                .Where(p => EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
+                .Where(p => (p.UserId == currentUserId || p.UserId == null) && // Include legacy data with null UserId
+                            (EF.Functions.Like(p.Title.ToLower(), $"%{lowerSearchTerm}%") ||
                             (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{lowerSearchTerm}%")) ||
                             EF.Functions.Like(p.Content.ToLower(), $"%{lowerSearchTerm}%") ||
-                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%")))
+                            p.Tags.Any(t => EF.Functions.Like(t.Name.ToLower(), $"%{lowerSearchTerm}%"))))
                 .OrderByDescending(p => p.UpdatedAt)
                 .AsNoTracking();
 
@@ -503,11 +542,13 @@ public class PromptService(
             if (string.IsNullOrWhiteSpace(tag))
                 return await GetAllPromptsAsync();
 
-            logger.LogDebug("Retrieving prompts by tag: {Tag}", tag);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Retrieving prompts by tag: {Tag} for user: {UserId}", tag, currentUserId);
 
             return await context.Prompts
                 .Include(p => p.Tags)
-                .Where(p => p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
+                .Where(p => (p.UserId == currentUserId || p.UserId == null) && // Include legacy data with null UserId
+                            p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
                 .OrderByDescending(p => p.UpdatedAt)
                 .AsNoTracking() // Performance optimization
                 .ToListAsync();
@@ -526,11 +567,13 @@ public class PromptService(
             if (string.IsNullOrWhiteSpace(tag))
                 return await GetPromptsPagedAsync(page, pageSize);
 
-            logger.LogDebug("Retrieving prompts by tag: {Tag}, page {Page}, size {PageSize}", tag, page, pageSize);
+            var currentUserId = GetCurrentUserId();
+            logger.LogDebug("Retrieving prompts by tag: {Tag}, page {Page}, size {PageSize} for user: {UserId}", tag, page, pageSize, currentUserId);
 
             var query = context.Prompts
                 .Include(p => p.Tags)
-                .Where(p => p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
+                .Where(p => (p.UserId == currentUserId || p.UserId == null) && // Include legacy data with null UserId
+                            p.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
                 .OrderByDescending(p => p.UpdatedAt)
                 .AsNoTracking();
 
