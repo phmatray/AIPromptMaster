@@ -51,9 +51,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
+// Add authorization services
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddAuthenticationStateSerialization();
 
 // Add HttpContextAccessor for Blazor Server
 builder.Services.AddHttpContextAccessor();
