@@ -4,7 +4,7 @@ status: backlog
 created: 2025-08-29T08:08:45Z
 progress: 0%
 prd: .claude/prds/user-mgmt-system.md
-github: [Will be updated when synced to GitHub]
+github: https://github.com/phmatray/AIPromptMaster/issues/2
 ---
 
 # Epic: User Management System
