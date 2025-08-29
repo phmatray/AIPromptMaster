@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using AIPromptManager.Data;
 using AIPromptManager.Models;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace AIPromptManager.Services;
 
@@ -9,9 +11,16 @@ public class PromptService(
     ILogger<PromptService> logger,
     IValidationService validationService,
     IStorageService storageService,
-    IPerformanceMonitoringService performanceMonitoring)
+    IPerformanceMonitoringService performanceMonitoring,
+    IHttpContextAccessor httpContextAccessor)
     : IPromptService
 {
+    private string GetCurrentUserId()
+    {
+        return httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new UnauthorizedAccessException("User not authenticated");
+    }
+
     public async Task<IEnumerable<Prompt>> GetAllPromptsAsync()
     {
         return await performanceMonitoring.MonitorPerformanceAsync("GetAllPrompts", async () =>
