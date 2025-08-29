@@ -2,6 +2,8 @@
 @using AIPromptManager.Models
 @using AIPromptManager.Services
 @using AIPromptManager.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject IPromptService PromptService
 @inject IToastService ToastService
 @inject NavigationManager Navigation
@@ -9,42 +11,69 @@
 
 <PageTitle>Edit Prompt - AI Prompt Manager</PageTitle>
 
-@if (_isLoading)
-{
-    <LoadingSpinner Message="Loading prompt..." CenterVertically="true" />
-}
-else if (_prompt == null)
-{
-    <div class="text-center py-12">
-        <i class="fas fa-exclamation-triangle fa-3x text-gray-400" aria-hidden="true"></i>
-        <h3 class="mt-2 text-lg font-medium text-gray-900">Prompt not found</h3>
-        <p class="mt-1 text-sm text-gray-500">The prompt you're looking for doesn't exist or may have been deleted.</p>
-        <div class="mt-6">
-            <button @onclick="NavigateToPrompts" 
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Back to Prompts
-            </button>
-        </div>
-    </div>
-}
-else
-{
-    <div class="space-y-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Edit Prompt</h1>
-            <p class="mt-1 text-sm text-gray-600">Update your prompt details</p>
-        </div>
+<AuthorizeView>
+    <Authorized>
+        @if (_isLoading)
+        {
+            <LoadingSpinner Message="Loading prompt..." CenterVertically="true" />
+        }
+        else if (_prompt == null)
+        {
+            <div class="text-center py-12">
+                <i class="fas fa-exclamation-triangle fa-3x text-gray-400" aria-hidden="true"></i>
+                <h3 class="mt-2 text-lg font-medium text-gray-900">Prompt not found</h3>
+                <p class="mt-1 text-sm text-gray-500">The prompt you're looking for doesn't exist or may have been deleted.</p>
+                <div class="mt-6">
+                    <button @onclick="NavigateToPrompts" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Back to Prompts
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Edit Prompt</h1>
+                    <p class="mt-1 text-sm text-gray-600">Update your prompt details</p>
+                </div>
 
-        <!-- Prompt Form -->
-        <div class="bg-white shadow rounded-lg">
-            <PromptForm ExistingPrompt="_prompt" 
-                       OnSave="@HandleSave" 
-                       OnCancel="@HandleCancel"
-                       OnDelete="@HandleDelete"
-                       OnError="@HandleError" />
+                <!-- Prompt Form -->
+                <div class="bg-white shadow rounded-lg">
+                    <PromptForm ExistingPrompt="_prompt" 
+                               OnSave="@HandleSave" 
+                               OnCancel="@HandleCancel"
+                               OnDelete="@HandleDelete"
+                               OnError="@HandleError" />
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="text-center py-12">
+            <div class="flex justify-center mb-6">
+                <i class="fas fa-lock fa-4x text-red-400" aria-hidden="true"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Authentication Required</h1>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                You need to be logged in to edit prompts. Please sign in to your account to access this feature.
+            </p>
+            <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+                <a href="/Account/Login" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Log In
+                </a>
+                <a href="/Account/Register" 
+                   class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Create Account
+                </a>
+            </div>
         </div>
-    </div>
-}
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     [Parameter] public int Id { get; set; }

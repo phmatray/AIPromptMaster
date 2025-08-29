@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using AIPromptManager.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>AI Prompt Manager</PageTitle>
 
@@ -15,79 +16,123 @@
         <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl">
             AI Prompt Manager
         </h1>
-        <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-            Organize, manage, and access your AI prompts in one centralized location. 
-            Create, categorize, and search through your prompt collection with ease.
-        </p>
+        
+        <AuthorizeView>
+            <Authorized>
+                <p class="mt-2 text-lg text-blue-600 font-medium">
+                    Welcome back, @context.User.Identity.Name!
+                </p>
+                <p class="mt-2 text-xl text-gray-600 max-w-3xl mx-auto">
+                    Organize, manage, and access your AI prompts in one centralized location. 
+                    Create, categorize, and search through your prompt collection with ease.
+                </p>
+            </Authorized>
+            <NotAuthorized>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
+                    Organize, manage, and access your AI prompts in one centralized location. 
+                    Sign up today to start building your personalized prompt collection.
+                </p>
+            </NotAuthorized>
+        </AuthorizeView>
     </header>
 
     <!-- Quick Actions -->
     <section aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading" class="sr-only">Quick Actions</h2>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
-            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0" aria-hidden="true">
-                            <i class="fas fa-plus-circle fa-3x text-blue-600" aria-hidden="true"></i>
+        
+        <AuthorizeView>
+            <Authorized>
+                <!-- Authenticated users see full functionality -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
+                    <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0" aria-hidden="true">
+                                    <i class="fas fa-plus-circle fa-3x text-blue-600" aria-hidden="true"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Create Prompt</h3>
+                                    <p class="text-sm text-gray-500">Add a new AI prompt to your collection</p>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/create" 
+                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                   aria-label="Create a new prompt">
+                                    Get Started
+                                </a>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">Create Prompt</h3>
-                            <p class="text-sm text-gray-500">Add a new AI prompt to your collection</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <a href="/create" 
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                           aria-label="Create a new prompt">
-                            Get Started
-                        </a>
-                    </div>
-                </div>
-            </article>
+                    </article>
 
-            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0" aria-hidden="true">
-                            <i class="fas fa-list-alt fa-3x text-green-600" aria-hidden="true"></i>
+                    <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0" aria-hidden="true">
+                                    <i class="fas fa-list-alt fa-3x text-green-600" aria-hidden="true"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Browse Prompts</h3>
+                                    <p class="text-sm text-gray-500">View and manage your existing prompts</p>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/prompts" 
+                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                   aria-label="Browse existing prompts">
+                                    View All
+                                </a>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">Browse Prompts</h3>
-                            <p class="text-sm text-gray-500">View and manage your existing prompts</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <a href="/prompts" 
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                           aria-label="Browse existing prompts">
-                            View All
-                        </a>
-                    </div>
-                </div>
-            </article>
+                    </article>
 
-            <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0" aria-hidden="true">
-                            <i class="fas fa-search fa-3x text-purple-600" aria-hidden="true"></i>
+                    <article class="bg-white overflow-hidden shadow rounded-lg" role="listitem">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0" aria-hidden="true">
+                                    <i class="fas fa-search fa-3x text-purple-600" aria-hidden="true"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Search Prompts</h3>
+                                    <p class="text-sm text-gray-500">Find specific prompts quickly</p>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/search" 
+                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                                   aria-label="Search through prompts">
+                                    Search
+                                </a>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">Search Prompts</h3>
-                            <p class="text-sm text-gray-500">Find specific prompts quickly</p>
-                        </div>
+                    </article>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <!-- Anonymous users see limited content with login prompt -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                    <div class="flex justify-center mb-4">
+                        <i class="fas fa-lock fa-3x text-yellow-600" aria-hidden="true"></i>
                     </div>
-                    <div class="mt-4">
-                        <a href="/search" 
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                           aria-label="Search through prompts">
-                            Search
+                    <h3 class="text-lg font-medium text-yellow-800 mb-2">Authentication Required</h3>
+                    <p class="text-sm text-yellow-700 mb-4">
+                        Please log in to access the full AI Prompt Manager functionality including creating, editing, and managing your prompts.
+                    </p>
+                    <div class="space-y-2 sm:space-y-0 sm:space-x-3 sm:flex sm:justify-center">
+                        <a href="/Account/Login" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Log In
+                        </a>
+                        <a href="/Account/Register" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Register
                         </a>
                     </div>
                 </div>
-            </article>
-        </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </section>
 
     <!-- Features Section -->
