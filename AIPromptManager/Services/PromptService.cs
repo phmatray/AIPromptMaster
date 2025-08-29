@@ -3,6 +3,7 @@ using AIPromptManager.Data;
 using AIPromptManager.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AIPromptManager.Services;
 
@@ -15,10 +16,43 @@ public class PromptService(
     IHttpContextAccessor httpContextAccessor)
     : IPromptService
 {
-    private string GetCurrentUserId()
+    private string GetCurrentUserId(bool allowAnonymous = false)
     {
-        return httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new UnauthorizedAccessException("User not authenticated");
+        var httpContext = httpContextAccessor.HttpContext;
+        
+        // Handle cases where HttpContext might be null (background tasks, etc.)
+        if (httpContext == null)
+        {
+            if (allowAnonymous)
+            {
+                logger.LogDebug("HttpContext is null, allowing anonymous access for background task");
+                return string.Empty; // Return empty string for background tasks
+            }
+            logger.LogWarning("Unauthorized access attempt: HttpContext is null");
+            throw new UnauthorizedAccessException("Access denied: User authentication required");
+        }
+        
+        var user = httpContext.User;
+        if (user == null || !user.Identity?.IsAuthenticated == true)
+        {
+            if (allowAnonymous)
+            {
+                logger.LogDebug("User not authenticated, allowing anonymous access");
+                return string.Empty;
+            }
+            logger.LogWarning("Unauthorized access attempt: User not authenticated or missing claims");
+            throw new UnauthorizedAccessException("Access denied: User authentication required");
+        }
+        
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            logger.LogWarning("Unauthorized access attempt: User ID claim missing for user {UserName}", 
+                user.Identity?.Name ?? "Unknown");
+            throw new UnauthorizedAccessException("Access denied: Invalid user credentials");
+        }
+        
+        return userId;
     }
 
     public async Task<IEnumerable<Prompt>> GetAllPromptsAsync()
@@ -90,9 +124,9 @@ public class PromptService(
             
             if (prompt != null && prompt.UserId != null && prompt.UserId != currentUserId)
             {
-                logger.LogWarning("User {UserId} attempted to access prompt {PromptId} owned by {OwnerId}", 
+                logger.LogWarning("SECURITY: Unauthorized access attempt - User {UserId} attempted to access prompt {PromptId} owned by {OwnerId}", 
                     currentUserId, id, prompt.UserId);
-                throw new UnauthorizedAccessException("You do not have permission to access this prompt");
+                throw new UnauthorizedAccessException("Access denied: You do not have permission to access this resource");
             }
             
             return prompt;
@@ -235,7 +269,8 @@ public class PromptService(
             context.Prompts.Add(prompt);
             await context.SaveChangesAsync();
 
-            logger.LogInformation("Successfully created prompt with ID: {PromptId}", prompt.Id);
+            logger.LogInformation("AUDIT: User {UserId} successfully created prompt {PromptId} with title '{Title}'", 
+                prompt.UserId, prompt.Id, prompt.Title);
             return await GetPromptByIdAsync(prompt.Id) ?? prompt;
         }
         catch (DbUpdateException ex) when (IsConstraintViolation(ex))
@@ -298,9 +333,9 @@ public class PromptService(
             // Verify ownership before allowing updates
             if (existingPrompt.UserId != null && existingPrompt.UserId != currentUserId)
             {
-                logger.LogWarning("User {UserId} attempted to update prompt {PromptId} owned by {OwnerId}", 
+                logger.LogWarning("SECURITY: Unauthorized update attempt - User {UserId} attempted to update prompt {PromptId} owned by {OwnerId}", 
                     currentUserId, prompt.Id, existingPrompt.UserId);
-                throw new UnauthorizedAccessException("You do not have permission to update this prompt");
+                throw new UnauthorizedAccessException("Access denied: You do not have permission to modify this resource");
             }
 
             // Set the original RowVersion for optimistic concurrency
@@ -397,7 +432,8 @@ public class PromptService(
             try
             {
                 await context.SaveChangesAsync();
-                logger.LogInformation("Successfully updated prompt with ID: {PromptId}", prompt.Id);
+                logger.LogInformation("AUDIT: User {UserId} successfully updated prompt {PromptId} with title '{Title}'", 
+                    currentUserId, prompt.Id, prompt.Title);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -450,15 +486,17 @@ public class PromptService(
             // Verify ownership before allowing deletion
             if (prompt.UserId != null && prompt.UserId != currentUserId)
             {
-                logger.LogWarning("User {UserId} attempted to delete prompt {PromptId} owned by {OwnerId}", 
+                logger.LogWarning("SECURITY: Unauthorized deletion attempt - User {UserId} attempted to delete prompt {PromptId} owned by {OwnerId}", 
                     currentUserId, id, prompt.UserId);
-                throw new UnauthorizedAccessException("You do not have permission to delete this prompt");
+                throw new UnauthorizedAccessException("Access denied: You do not have permission to delete this resource");
             }
 
+            var promptTitle = prompt.Title; // Store title before deletion for logging
             context.Prompts.Remove(prompt);
             await context.SaveChangesAsync();
                 
-            logger.LogInformation("Successfully deleted prompt with ID: {PromptId}", id);
+            logger.LogInformation("AUDIT: User {UserId} successfully deleted prompt {PromptId} with title '{Title}'", 
+                currentUserId, id, promptTitle);
         }
         catch (Exception ex)
         {
