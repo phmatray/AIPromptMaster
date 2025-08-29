@@ -21,7 +21,7 @@ public class Prompt
     public string? UserId { get; set; }
 
     // Navigation property to User
-    public virtual IdentityUser? User { get; set; }
+    public virtual ApplicationUser? User { get; set; }
 
     // Navigation property for many-to-many relationship
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();

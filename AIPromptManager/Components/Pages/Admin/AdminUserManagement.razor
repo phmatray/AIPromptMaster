@@ -1,0 +1,543 @@
+@page "/admin/users"
+@using AIPromptManager.Models
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using AIPromptManager.Components.Shared
+@attribute [Authorize(Roles = "Admin")]
+@inject IAdminService AdminService
+@inject ILogger<AdminUserManagement> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>User Management - Admin - AI Prompt Manager</PageTitle>
+
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <nav class="flex" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-4">
+                    <li>
+                        <div>
+                            <a href="/admin" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                                <span class="sr-only">Admin Dashboard</span>
+                            </a>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400" aria-hidden="true"></i>
+                            <span class="ml-4 text-sm font-medium text-gray-500">User Management</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <h1 class="mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                <i class="fas fa-users-cog mr-2 text-blue-600"></i>
+                User Management
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Manage user accounts, roles, and permissions
+            </p>
+        </div>
+    </div>
+
+    <!-- Status Message -->
+    <StatusMessage Message="@statusMessage" />
+
+    <!-- Search and Filters -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700">Search Users</label>
+                    <div class="mt-1 relative">
+                        <input @bind="searchTerm" @oninput="OnSearchChanged"
+                               type="text" id="search" 
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                               placeholder="Name or email..." />
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-search text-gray-400" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="role-filter" class="block text-sm font-medium text-gray-700">Filter by Role</label>
+                    <select @bind="selectedRoleFilter" @onchange="OnRoleFilterChanged"
+                            id="role-filter" 
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">All Roles</option>
+                        @if (availableRoles != null)
+                        {
+                            @foreach (var role in availableRoles)
+                            {
+                                <option value="@role.Name">@role.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="sm:col-span-2 flex items-end">
+                    <button @onclick="RefreshUsers" disabled="@isLoading"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-sync-alt -ml-1 mr-2 @(isLoading ? "fa-spin" : "")" aria-hidden="true"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    @if (isLoading)
+    {
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="text-center">
+                <i class="fas fa-spinner fa-spin fa-2x text-gray-400 mb-4"></i>
+                <p class="text-gray-500">Loading users...</p>
+            </div>
+        </div>
+    }
+    else if (filteredUsers?.Any() == true)
+    {
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Users (@filteredUsers.Count())
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Manage user roles and account settings
+                </p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                User
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Email Verified
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Roles
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Created Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach (var user in filteredUsers)
+                        {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                @(user.DisplayName ?? user.UserName ?? "Unknown")
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                @user.Email
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Verified
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            Pending
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-wrap gap-1">
+                                        @if (userRoles?.ContainsKey(user.Id) == true)
+                                        {
+                                            @foreach (var role in userRoles[user.Id])
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @GetRoleBadgeClass(role)">
+                                                    @role
+                                                    @if (role != "Admin" || await CanRemoveAdminRole(user.Id))
+                                                    {
+                                                        <button @onclick="() => RemoveUserRole(user.Id, role)" 
+                                                                class="ml-1 text-xs hover:text-red-700"
+                                                                title="Remove role">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    }
+                                                </span>
+                                            }
+                                        }
+                                        @if (availableRoles != null)
+                                        {
+                                            <select @onchange="((args) => AddUserRole(user.Id, args.Value?.ToString()))"
+                                                    class="text-xs border-gray-300 rounded-md">
+                                                <option value="">Add Role...</option>
+                                                @foreach (var role in availableRoles)
+                                                {
+                                                    @if (userRoles?.ContainsKey(user.Id) != true || !userRoles[user.Id].Contains(role.Name!))
+                                                    {
+                                                        <option value="@role.Name">@role.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @user.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button @onclick="() => ShowDeleteConfirmation(user)" 
+                                            disabled="@(isProcessing || (userRoles?.ContainsKey(user.Id) == true && userRoles[user.Id].Contains("Admin") && !await CanDeleteAdminUser(user.Id)))"
+                                            class="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                        <i class="fas fa-trash-alt mr-1"></i>
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <i class="fas fa-users fa-3x text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+            <p class="text-gray-500">
+                @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(selectedRoleFilter))
+                {
+                    <span>No users match your current search criteria.</span>
+                }
+                else
+                {
+                    <span>No users are registered in the system.</span>
+                }
+            </p>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Dialog -->
+<ConfirmDialog IsVisible="@showDeleteDialog"
+               Title="Delete User Account"
+               Message="@deleteDialogMessage"
+               ConfirmText="Delete"
+               CancelText="Cancel"
+               Type="ConfirmDialogType.Danger"
+               IsProcessing="@isProcessing"
+               ProcessingText="Deleting..."
+               OnConfirm="ConfirmDeleteUser"
+               OnCancel="CancelDeleteUser" />
+
+@code {
+    private IEnumerable<ApplicationUser>? allUsers;
+    private IEnumerable<ApplicationUser>? filteredUsers;
+    private IEnumerable<IdentityRole>? availableRoles;
+    private Dictionary<string, List<string>>? userRoles;
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string? statusMessage;
+    private string searchTerm = "";
+    private string selectedRoleFilter = "";
+
+    // Delete confirmation
+    private bool showDeleteDialog = false;
+    private ApplicationUser? userToDelete;
+    private string deleteDialogMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Load all data in parallel
+            var usersTask = AdminService.GetAllUsersWithRolesAsync();
+            var rolesTask = AdminService.GetAllRolesAsync();
+
+            await Task.WhenAll(usersTask, rolesTask);
+
+            allUsers = await usersTask;
+            availableRoles = await rolesTask;
+
+            // Build user roles dictionary
+            userRoles = new Dictionary<string, List<string>>();
+            foreach (var user in allUsers)
+            {
+                var roles = await AdminService.GetUserRolesAsync(user.Id);
+                userRoles[user.Id] = roles.ToList();
+            }
+
+            ApplyFilters();
+
+            Logger.LogInformation("User management data loaded successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading user management data");
+            statusMessage = "Error: Failed to load user data. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        if (allUsers == null)
+        {
+            filteredUsers = null;
+            return;
+        }
+
+        var query = allUsers.AsQueryable();
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var search = searchTerm.ToLower();
+            query = query.Where(u => 
+                (u.DisplayName != null && u.DisplayName.ToLower().Contains(search)) ||
+                (u.UserName != null && u.UserName.ToLower().Contains(search)) ||
+                (u.Email != null && u.Email.ToLower().Contains(search)));
+        }
+
+        // Apply role filter
+        if (!string.IsNullOrWhiteSpace(selectedRoleFilter))
+        {
+            query = query.Where(u => 
+                userRoles != null && 
+                userRoles.ContainsKey(u.Id) && 
+                userRoles[u.Id].Contains(selectedRoleFilter));
+        }
+
+        filteredUsers = query.OrderBy(u => u.UserName).ToList();
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnRoleFilterChanged(ChangeEventArgs e)
+    {
+        selectedRoleFilter = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private async Task RefreshUsers()
+    {
+        statusMessage = null;
+        await LoadData();
+    }
+
+    private async Task AddUserRole(string userId, string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName) || isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+
+            var result = await AdminService.AssignRoleAsync(userId, roleName);
+            if (result.Succeeded)
+            {
+                statusMessage = $"Success: Role '{roleName}' assigned successfully.";
+                
+                // Update local user roles
+                if (userRoles?.ContainsKey(userId) == true)
+                {
+                    userRoles[userId].Add(roleName);
+                }
+
+                Logger.LogInformation("Role {RoleName} assigned to user {UserId}", roleName, userId);
+            }
+            else
+            {
+                statusMessage = $"Error: Failed to assign role. {string.Join(", ", result.Errors.Select(e => e.Description))}";
+                Logger.LogWarning("Failed to assign role {RoleName} to user {UserId}: {Errors}", 
+                    roleName, userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error assigning role {RoleName} to user {UserId}", roleName, userId);
+            statusMessage = "Error: An unexpected error occurred while assigning the role.";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveUserRole(string userId, string roleName)
+    {
+        if (isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+
+            var result = await AdminService.RemoveRoleAsync(userId, roleName);
+            if (result.Succeeded)
+            {
+                statusMessage = $"Success: Role '{roleName}' removed successfully.";
+                
+                // Update local user roles
+                if (userRoles?.ContainsKey(userId) == true)
+                {
+                    userRoles[userId].Remove(roleName);
+                }
+
+                Logger.LogInformation("Role {RoleName} removed from user {UserId}", roleName, userId);
+            }
+            else
+            {
+                statusMessage = $"Error: Failed to remove role. {string.Join(", ", result.Errors.Select(e => e.Description))}";
+                Logger.LogWarning("Failed to remove role {RoleName} from user {UserId}: {Errors}", 
+                    roleName, userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error removing role {RoleName} from user {UserId}", roleName, userId);
+            statusMessage = "Error: An unexpected error occurred while removing the role.";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowDeleteConfirmation(ApplicationUser user)
+    {
+        userToDelete = user;
+        deleteDialogMessage = $"Are you sure you want to delete the user '{user.DisplayName ?? user.UserName ?? user.Email}'? This action will permanently delete the user account and all associated data including prompts and preferences. This cannot be undone.";
+        showDeleteDialog = true;
+    }
+
+    private async Task ConfirmDeleteUser()
+    {
+        if (userToDelete == null || isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+
+            var result = await AdminService.DeleteUserAndDataAsync(userToDelete.Id);
+            if (result.Succeeded)
+            {
+                statusMessage = $"Success: User '{userToDelete.DisplayName ?? userToDelete.UserName ?? userToDelete.Email}' has been deleted.";
+                
+                // Remove from local collections
+                if (allUsers != null)
+                {
+                    allUsers = allUsers.Where(u => u.Id != userToDelete.Id).ToList();
+                }
+                userRoles?.Remove(userToDelete.Id);
+                ApplyFilters();
+
+                Logger.LogInformation("User {UserId} deleted successfully", userToDelete.Id);
+            }
+            else
+            {
+                statusMessage = $"Error: Failed to delete user. {string.Join(", ", result.Errors.Select(e => e.Description))}";
+                Logger.LogWarning("Failed to delete user {UserId}: {Errors}", 
+                    userToDelete.Id, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting user {UserId}", userToDelete.Id);
+            statusMessage = "Error: An unexpected error occurred while deleting the user.";
+        }
+        finally
+        {
+            showDeleteDialog = false;
+            userToDelete = null;
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task CancelDeleteUser()
+    {
+        showDeleteDialog = false;
+        userToDelete = null;
+        return Task.CompletedTask;
+    }
+
+    private string GetRoleBadgeClass(string roleName)
+    {
+        return roleName.ToLower() switch
+        {
+            "admin" => "bg-red-100 text-red-800",
+            "manager" => "bg-blue-100 text-blue-800",
+            "user" => "bg-green-100 text-green-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private async Task<bool> CanRemoveAdminRole(string userId)
+    {
+        try
+        {
+            var adminCount = await AdminService.GetUsersInRoleCountAsync("Admin");
+            return adminCount > 1; // Can remove if there's more than one admin
+        }
+        catch
+        {
+            return false; // Safe default
+        }
+    }
+
+    private async Task<bool> CanDeleteAdminUser(string userId)
+    {
+        try
+        {
+            var adminCount = await AdminService.GetUsersInRoleCountAsync("Admin");
+            return adminCount > 1; // Can delete if there's more than one admin
+        }
+        catch
+        {
+            return false; // Safe default
+        }
+    }
+}

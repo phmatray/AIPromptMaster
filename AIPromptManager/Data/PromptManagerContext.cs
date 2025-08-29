@@ -7,7 +7,7 @@ namespace AIPromptManager.Data;
 
 public class PromptManagerContext(
     DbContextOptions<PromptManagerContext> options)
-    : IdentityDbContext<IdentityUser>(options)
+    : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Prompt> Prompts { get; set; }
     public DbSet<Tag> Tags { get; set; }
@@ -89,6 +89,24 @@ public class PromptManagerContext(
             // Create unique index on Name to prevent duplicate tags
             entity.HasIndex(t => t.Name)
                 .IsUnique();
+        });
+
+        // Configure ApplicationUser entity
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            // Configure JSON column for UserPreferences (PostgreSQL uses jsonb)
+            entity.Property(e => e.Preferences)
+                .HasConversion(
+                    v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<UserPreferences>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                .HasColumnType("jsonb");
+
+            // Add indexes for performance
+            entity.HasIndex(e => e.CreatedAt)
+                .HasDatabaseName("IX_ApplicationUsers_CreatedAt");
+                
+            entity.HasIndex(e => e.UpdatedAt)
+                .HasDatabaseName("IX_ApplicationUsers_UpdatedAt");
         });
     }
 }

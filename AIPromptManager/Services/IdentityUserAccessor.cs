@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Identity;
+using AIPromptManager.Models;
 
 namespace AIPromptManager.Services;
 
-public sealed class IdentityUserAccessor(UserManager<IdentityUser> userManager, IdentityRedirectManager redirectManager, IHttpContextAccessor httpContextAccessor)
+public sealed class IdentityUserAccessor(UserManager<ApplicationUser> userManager, IdentityRedirectManager redirectManager, IHttpContextAccessor httpContextAccessor)
 {
-    public async Task<IdentityUser> GetRequiredUserAsync(HttpContext context)
+    public async Task<ApplicationUser> GetRequiredUserAsync(HttpContext context)
     {
         var user = await userManager.GetUserAsync(context.User);
 
@@ -16,7 +17,7 @@ public sealed class IdentityUserAccessor(UserManager<IdentityUser> userManager, 
         return user;
     }
 
-    public async Task<IdentityUser> GetRequiredUserAsync()
+    public async Task<ApplicationUser> GetRequiredUserAsync()
     {
         var context = httpContextAccessor.HttpContext;
         if (context is null)

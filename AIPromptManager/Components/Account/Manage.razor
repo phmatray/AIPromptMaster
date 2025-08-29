@@ -1,9 +1,10 @@
 @page "/Account/Manage"
 @using Microsoft.AspNetCore.Identity
 @using System.ComponentModel.DataAnnotations
+@using AIPromptManager.Models
 @attribute [Authorize]
-@inject UserManager<IdentityUser> UserManager
-@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 
@@ -223,7 +224,7 @@
 </div>
 
 @code {
-    private IdentityUser _currentUser = default!;
+    private ApplicationUser _currentUser = default!;
     private string? _email;
     private bool _isEmailConfirmed;
     private string? _statusMessage;

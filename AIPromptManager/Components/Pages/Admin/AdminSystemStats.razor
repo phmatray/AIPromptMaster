@@ -1,0 +1,207 @@
+@using AIPromptManager.Models
+
+@if (Stats != null)
+{
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Users Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users fa-2x text-blue-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.TotalUsers</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Prompts Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file-text fa-2x text-green-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Prompts</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.TotalPrompts</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Tags Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-tags fa-2x text-purple-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Tags</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.TotalTags</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Size Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-database fa-2x text-orange-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Database Size</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.FormattedDatabaseSize</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Statistics -->
+    <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Active Users Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chart-line fa-2x text-indigo-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Active Users (30 Days)</dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                @Stats.ActiveUsersLast30Days
+                                <span class="text-sm text-gray-500 ml-2">(@Stats.UserActivityRate%)</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Prompts Card -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-plus-circle fa-2x text-emerald-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Prompts Created (30 Days)</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.PromptsCreatedLast30Days</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Prompts per User -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-calculator fa-2x text-teal-600" aria-hidden="true"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Prompts/User</dt>
+                            <dd class="text-lg font-medium text-gray-900">@Stats.AveragePromptsPerUser</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="mt-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-heartbeat mr-2 text-red-500"></i>
+                    System Health
+                </h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Last Backup</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            @if (Stats.LastBackup.HasValue)
+                            {
+                                <span class="text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    @Stats.LastBackup.Value.ToString("MMM dd, yyyy HH:mm")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-yellow-600">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    Never
+                                </span>
+                            }
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Time Since Last Backup</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            @if (Stats.LastBackup.HasValue)
+                            {
+                                <span class="@(GetTimeSinceBackupClass())">
+                                    @Stats.TimeSinceLastBackup
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-yellow-600">No backups yet</span>
+                            }
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x text-gray-400 mb-4"></i>
+            <p class="text-gray-500">Loading system statistics...</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public SystemStatsModel? Stats { get; set; }
+
+    private string GetTimeSinceBackupClass()
+    {
+        if (!Stats?.LastBackup.HasValue ?? true)
+            return "text-yellow-600";
+
+        var timeSince = DateTime.UtcNow - Stats.LastBackup.Value;
+        
+        if (timeSince.TotalDays > 7)
+            return "text-red-600"; // More than a week - red
+        if (timeSince.TotalDays > 3)
+            return "text-yellow-600"; // More than 3 days - yellow
+        
+        return "text-green-600"; // Recent - green
+    }
+}

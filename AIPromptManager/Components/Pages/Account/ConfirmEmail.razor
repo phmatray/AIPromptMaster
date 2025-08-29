@@ -1,0 +1,239 @@
+@page "/Account/ConfirmEmail"
+@using Microsoft.AspNetCore.Identity
+@using AIPromptManager.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@inject ILogger<ConfirmEmail> Logger
+
+<PageTitle>Confirm Email</PageTitle>
+
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <!-- Logo/Brand -->
+        <div class="flex justify-center">
+            @if (_isConfirming)
+            {
+                <i class="fas fa-spinner fa-spin fa-3x text-blue-600" aria-hidden="true"></i>
+            }
+            else if (_confirmationSuccessful)
+            {
+                <i class="fas fa-envelope-open-text fa-3x text-green-600" aria-hidden="true"></i>
+            }
+            else
+            {
+                <i class="fas fa-exclamation-triangle fa-3x text-red-600" aria-hidden="true"></i>
+            }
+        </div>
+        
+        <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+            @if (_isConfirming)
+            {
+                <span>Confirming your email</span>
+            }
+            else if (_confirmationSuccessful)
+            {
+                <span>Email confirmed!</span>
+            }
+            else
+            {
+                <span>Email confirmation failed</span>
+            }
+        </h2>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="card">
+            <div class="card-body">
+                @if (_isConfirming)
+                {
+                    <div class="text-center py-8">
+                        <p class="text-sm text-gray-600 mb-4">Please wait while we confirm your email address...</p>
+                        <div class="flex justify-center">
+                            <div class="animate-pulse flex space-x-1">
+                                <div class="h-2 w-2 bg-blue-600 rounded-full"></div>
+                                <div class="h-2 w-2 bg-blue-600 rounded-full animation-delay-200"></div>
+                                <div class="h-2 w-2 bg-blue-600 rounded-full animation-delay-400"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_confirmationSuccessful)
+                {
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Email confirmed successfully</h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Thank you for confirming your email address. Your account is now fully activated and you can access all features.
+                        </p>
+                        <div class="space-y-3">
+                            <a href="Account/Login" 
+                               class="btn-primary w-full">
+                                <i class="fas fa-sign-in-alt mr-2" aria-hidden="true"></i>
+                                Sign in to your account
+                            </a>
+                            <a href="/" 
+                               class="block text-center text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1">
+                                Go to home page
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                            <i class="fas fa-times text-red-600 text-2xl" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Email confirmation failed</h3>
+                        <div class="text-sm text-gray-600 mb-6">
+                            @if (!string.IsNullOrEmpty(_errorMessage))
+                            {
+                                <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-left">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-exclamation-circle text-red-500 mt-0.5 mr-2 flex-shrink-0" aria-hidden="true"></i>
+                                        <span class="text-red-700">@_errorMessage</span>
+                                    </div>
+                                </div>
+                            }
+                            <p class="mb-2">This could happen if:</p>
+                            <ul class="text-left list-disc list-inside space-y-1 text-xs">
+                                <li>The confirmation link has expired</li>
+                                <li>The link has already been used</li>
+                                <li>The link is invalid or corrupted</li>
+                                <li>Your email has already been confirmed</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-3">
+                            <a href="Account/ResendEmailConfirmation" 
+                               class="btn-primary w-full">
+                                <i class="fas fa-envelope mr-2" aria-hidden="true"></i>
+                                Resend confirmation email
+                            </a>
+                            <div class="flex space-x-3">
+                                <a href="Account/Login" 
+                                   class="btn-secondary flex-1">
+                                    <i class="fas fa-sign-in-alt mr-1" aria-hidden="true"></i>
+                                    Sign in
+                                </a>
+                                <a href="/" 
+                                   class="btn-secondary flex-1">
+                                    <i class="fas fa-home mr-1" aria-hidden="true"></i>
+                                    Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Help section -->
+                @if (!_isConfirming)
+                {
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 mb-2">Need help?</p>
+                            <p class="text-xs text-gray-500">
+                                If you continue to have problems, please contact our support team for assistance.
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .animation-delay-200 {
+        animation-delay: 0.2s;
+    }
+    .animation-delay-400 {
+        animation-delay: 0.4s;
+    }
+</style>
+
+@code {
+    private bool _isConfirming = true;
+    private bool _confirmationSuccessful;
+    private string? _errorMessage;
+
+    [SupplyParameterFromQuery]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Code { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConfirmEmailAsync();
+    }
+
+    private async Task ConfirmEmailAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Code))
+            {
+                _isConfirming = false;
+                _confirmationSuccessful = false;
+                _errorMessage = "Invalid confirmation link. Missing user ID or confirmation code.";
+                Logger.LogWarning("Email confirmation attempted with missing parameters. UserId: {UserId}, Code: {CodePresent}", 
+                    UserId, !string.IsNullOrEmpty(Code));
+                return;
+            }
+
+            // Find the user by ID
+            var user = await UserManager.FindByIdAsync(UserId);
+            if (user == null)
+            {
+                _isConfirming = false;
+                _confirmationSuccessful = false;
+                _errorMessage = "User not found. The confirmation link may be invalid.";
+                Logger.LogWarning("Email confirmation attempted for non-existent user ID: {UserId}", UserId);
+                return;
+            }
+
+            // Check if email is already confirmed
+            if (user.EmailConfirmed)
+            {
+                _isConfirming = false;
+                _confirmationSuccessful = true;
+                Logger.LogInformation("Email confirmation attempted for already confirmed user: {UserId}", UserId);
+                return;
+            }
+
+            // URL decode the confirmation code
+            var decodedCode = System.Web.HttpUtility.UrlDecode(Code);
+
+            // Confirm the email
+            var result = await UserManager.ConfirmEmailAsync(user, decodedCode);
+
+            _isConfirming = false;
+
+            if (result.Succeeded)
+            {
+                _confirmationSuccessful = true;
+                Logger.LogInformation("Email confirmed successfully for user: {UserId}", UserId);
+            }
+            else
+            {
+                _confirmationSuccessful = false;
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                _errorMessage = "Email confirmation failed. The confirmation code may be invalid or expired.";
+                Logger.LogWarning("Email confirmation failed for user: {UserId}. Errors: {Errors}", UserId, errors);
+            }
+        }
+        catch (Exception ex)
+        {
+            _isConfirming = false;
+            _confirmationSuccessful = false;
+            _errorMessage = "An unexpected error occurred during email confirmation.";
+            Logger.LogError(ex, "Exception occurred during email confirmation for user: {UserId}", UserId);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+}

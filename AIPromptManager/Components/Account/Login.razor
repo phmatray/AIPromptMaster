@@ -2,7 +2,8 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using System.ComponentModel.DataAnnotations
-@inject SignInManager<IdentityUser> SignInManager
+@using AIPromptManager.Models
+@inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager Navigation
 @inject IdentityRedirectManager RedirectManager

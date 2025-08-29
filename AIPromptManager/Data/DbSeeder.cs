@@ -1,4 +1,5 @@
 using AIPromptManager.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AIPromptManager.Data;
@@ -121,5 +122,130 @@ public static class DbSeeder
 
         await dbContext.Prompts.AddRangeAsync(prompts);
         await dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Seeds roles and creates the default admin user.
+    /// </summary>
+    /// <param name="roleManager">The role manager for creating roles</param>
+    /// <param name="userManager">The user manager for creating users</param>
+    /// <param name="logger">Logger for tracking seeding operations</param>
+    public static async Task SeedRolesAndAdminAsync(
+        RoleManager<IdentityRole> roleManager, 
+        UserManager<ApplicationUser> userManager,
+        ILogger logger)
+    {
+        try
+        {
+            logger.LogInformation("Starting role and admin user seeding...");
+
+            // Seed Admin role
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                var adminRole = new IdentityRole("Admin");
+                var result = await roleManager.CreateAsync(adminRole);
+                if (result.Succeeded)
+                {
+                    logger.LogInformation("Admin role created successfully");
+                }
+                else
+                {
+                    logger.LogError("Failed to create Admin role: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                    return;
+                }
+            }
+            else
+            {
+                logger.LogInformation("Admin role already exists, skipping creation");
+            }
+
+            // Seed User role
+            if (!await roleManager.RoleExistsAsync("User"))
+            {
+                var userRole = new IdentityRole("User");
+                var result = await roleManager.CreateAsync(userRole);
+                if (result.Succeeded)
+                {
+                    logger.LogInformation("User role created successfully");
+                }
+                else
+                {
+                    logger.LogError("Failed to create User role: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                    return;
+                }
+            }
+            else
+            {
+                logger.LogInformation("User role already exists, skipping creation");
+            }
+
+            // Create default admin user
+            const string adminEmail = "admin@promptmaster.com";
+            const string adminPassword = "Admin123!";
+            
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
+            {
+                adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FirstName = "System",
+                    LastName = "Administrator",
+                    EmailConfirmed = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+                if (createResult.Succeeded)
+                {
+                    logger.LogInformation("Default admin user created successfully");
+                    
+                    // Assign admin role
+                    var roleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
+                    if (roleResult.Succeeded)
+                    {
+                        logger.LogInformation("Admin role assigned to default admin user successfully");
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to assign Admin role to admin user: {Errors}", 
+                            string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+                else
+                {
+                    logger.LogError("Failed to create default admin user: {Errors}", 
+                        string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                }
+            }
+            else
+            {
+                logger.LogInformation("Default admin user already exists, skipping creation");
+                
+                // Ensure admin user has admin role
+                if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+                {
+                    var roleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
+                    if (roleResult.Succeeded)
+                    {
+                        logger.LogInformation("Admin role assigned to existing admin user");
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to assign Admin role to existing admin user: {Errors}", 
+                            string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+            }
+
+            logger.LogInformation("Role and admin user seeding completed successfully");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred during role and admin user seeding");
+            throw;
+        }
     }
 }

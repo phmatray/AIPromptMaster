@@ -74,6 +74,56 @@
                             <span class="truncate">Responsive Test</span>
                         </NavLink>
                     </li>
+
+                    <!-- Admin-only section -->
+                    <AuthorizeView Roles="Admin">
+                        <Authorized Context="adminContext">
+                            <!-- Section divider -->
+                            <li role="separator" class="my-4">
+                                <div class="border-t border-gray-200"></div>
+                            </li>
+
+                            <!-- Administration section header -->
+                            <li role="listitem" class="px-3 py-2">
+                                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Administration
+                                </span>
+                            </li>
+
+                            <!-- Admin Dashboard -->
+                            <li role="listitem">
+                                <NavLink class="@GetNavLinkClasses()" 
+                                         href="admin"
+                                         @onclick="HandleNavClick"
+                                         role="menuitem">
+                                    <i class="fas fa-tachometer-alt fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                                    <span class="truncate">Dashboard</span>
+                                </NavLink>
+                            </li>
+
+                            <!-- User Management -->
+                            <li role="listitem">
+                                <NavLink class="@GetNavLinkClasses()" 
+                                         href="admin/users"
+                                         @onclick="HandleNavClick"
+                                         role="menuitem">
+                                    <i class="fas fa-users fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                                    <span class="truncate">User Management</span>
+                                </NavLink>
+                            </li>
+
+                            <!-- All Prompts Management -->
+                            <li role="listitem">
+                                <NavLink class="@GetNavLinkClasses()" 
+                                         href="admin/prompts"
+                                         @onclick="HandleNavClick"
+                                         role="menuitem">
+                                    <i class="fas fa-layer-group fa-lg mr-3 flex-shrink-0" aria-hidden="true"></i>
+                                    <span class="truncate">All Prompts</span>
+                                </NavLink>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
                 </Authorized>
                 <NotAuthorized>
                     <!-- Unauthenticated user menu items - visible in mobile menu -->
