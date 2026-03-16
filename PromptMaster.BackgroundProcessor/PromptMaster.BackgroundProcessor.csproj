@@ -12,7 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="TickerQ" Version="10.1.1" />
+    <PackageReference Include="TickerQ" Version="10.2.1" />
     <PackageReference Include="TickerQ.Dashboard" Version="10.1.1" />
     <PackageReference Include="TickerQ.EntityFrameworkCore" Version="10.1.1" />
     <PackageReference Include="TickerQ.Utilities" Version="10.1.1" />
