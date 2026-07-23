@@ -1,3 +1,5 @@
+![AIPromptMaster banner](.github/banner.png)
+
 # Claude Code PM
 
 [![Automaze](https://img.shields.io/badge/By-automaze.io-4b3baf)](https://automaze.io)
