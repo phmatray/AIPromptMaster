@@ -75,7 +75,7 @@
                 </div>
                 <div>
                     <label for="user-filter" class="block text-sm font-medium text-gray-700">Filter by User</label>
-                    <select @bind="selectedUserFilter" @onchange="OnUserFilterChanged"
+                    <select @bind="selectedUserFilter" @bind:after="OnUserFilterChanged"
                             id="user-filter" 
                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option value="">All Users</option>
@@ -90,7 +90,7 @@
                 </div>
                 <div>
                     <label for="sort-by" class="block text-sm font-medium text-gray-700">Sort By</label>
-                    <select @bind="sortBy" @onchange="OnSortChanged"
+                    <select @bind="sortBy" @bind:after="OnSortChanged"
                             id="sort-by" 
                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option value="created-desc">Newest First</option>
@@ -153,12 +153,13 @@
                                 <span class="sr-only">Previous</span>
                                 <i class="fas fa-chevron-left" aria-hidden="true"></i>
                             </button>
-                            @for (int page = Math.Max(1, currentPage - 2); page <= Math.Min(totalPages, currentPage + 2); page++)
+                            @* the loop variable must not be called 'page': @page in markup is parsed as the @page directive *@
+                            @for (int pageIndex = Math.Max(1, currentPage - 2); pageIndex <= Math.Min(totalPages, currentPage + 2); pageIndex++)
                             {
-                                int pageNumber = page; // Capture for lambda
+                                int pageNumber = pageIndex; // Capture for lambda
                                 <button @onclick="() => GoToPage(pageNumber)" 
-                                        class="@(page == currentPage ? "bg-indigo-50 border-indigo-500 text-indigo-600 z-10" : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50") relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                    @page
+                                        class="@(pageNumber == currentPage ? "bg-indigo-50 border-indigo-500 text-indigo-600 z-10" : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50") relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    @pageNumber
                                 </button>
                             }
                             <button @onclick="NextPage" disabled="@(currentPage >= totalPages)"
@@ -412,17 +413,10 @@
         ApplyFilters();
     }
 
-    private void OnUserFilterChanged(ChangeEventArgs e)
-    {
-        selectedUserFilter = e.Value?.ToString() ?? "";
-        ApplyFilters();
-    }
+    // @bind has already written the value; this only reacts to it
+    private void OnUserFilterChanged() => ApplyFilters();
 
-    private void OnSortChanged(ChangeEventArgs e)
-    {
-        sortBy = e.Value?.ToString() ?? "created-desc";
-        ApplyFilters();
-    }
+    private void OnSortChanged() => ApplyFilters();
 
     private async Task RefreshPrompts()
     {
@@ -487,7 +481,7 @@
             isProcessing = true;
             StateHasChanged();
 
-            await PromptService.DeleteAsync(promptToDelete.Id);
+            await PromptService.DeletePromptAsync(promptToDelete.Id);
             
             statusMessage = $"Success: Prompt '{promptToDelete.Title}' has been deleted.";
             
