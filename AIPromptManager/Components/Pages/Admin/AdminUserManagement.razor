@@ -63,7 +63,7 @@
                 </div>
                 <div>
                     <label for="role-filter" class="block text-sm font-medium text-gray-700">Filter by Role</label>
-                    <select @bind="selectedRoleFilter" @onchange="OnRoleFilterChanged"
+                    <select @bind="selectedRoleFilter" @bind:after="OnRoleFilterChanged"
                             id="role-filter" 
                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option value="">All Roles</option>
@@ -175,7 +175,7 @@
                                             {
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @GetRoleBadgeClass(role)">
                                                     @role
-                                                    @if (role != "Admin" || await CanRemoveAdminRole(user.Id))
+                                                    @if (role != "Admin" || canModifyAdmins)
                                                     {
                                                         <button @onclick="() => RemoveUserRole(user.Id, role)" 
                                                                 class="ml-1 text-xs hover:text-red-700"
@@ -207,7 +207,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button @onclick="() => ShowDeleteConfirmation(user)" 
-                                            disabled="@(isProcessing || (userRoles?.ContainsKey(user.Id) == true && userRoles[user.Id].Contains("Admin") && !await CanDeleteAdminUser(user.Id)))"
+                                            disabled="@(isProcessing || (userRoles?.ContainsKey(user.Id) == true && userRoles[user.Id].Contains("Admin") && !canModifyAdmins))"
                                             class="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed">
                                         <i class="fas fa-trash-alt mr-1"></i>
                                         Delete
@@ -258,6 +258,9 @@
     private Dictionary<string, List<string>>? userRoles;
     private bool isLoading = true;
     private bool isProcessing = false;
+    // Whether more than one admin exists. Computed with the data, not during render:
+    // the Razor render tree is synchronous and cannot await.
+    private bool canModifyAdmins;
     private string? statusMessage;
     private string searchTerm = "";
     private string selectedRoleFilter = "";
@@ -295,6 +298,8 @@
                 var roles = await AdminService.GetUserRolesAsync(user.Id);
                 userRoles[user.Id] = roles.ToList();
             }
+
+            canModifyAdmins = await MoreThanOneAdminAsync();
 
             ApplyFilters();
 
@@ -351,11 +356,8 @@
         ApplyFilters();
     }
 
-    private void OnRoleFilterChanged(ChangeEventArgs e)
-    {
-        selectedRoleFilter = e.Value?.ToString() ?? "";
-        ApplyFilters();
-    }
+    // @bind has already written the value; this only reacts to it
+    private void OnRoleFilterChanged() => ApplyFilters();
 
     private async Task RefreshUsers()
     {
@@ -515,29 +517,18 @@
         };
     }
 
-    private async Task<bool> CanRemoveAdminRole(string userId)
+    // Removing the admin role, and deleting an admin, were both gated on the very same
+    // question - neither used the userId they took - so they are one helper now.
+    private async Task<bool> MoreThanOneAdminAsync()
     {
         try
         {
             var adminCount = await AdminService.GetUsersInRoleCountAsync("Admin");
-            return adminCount > 1; // Can remove if there's more than one admin
+            return adminCount > 1;
         }
         catch
         {
-            return false; // Safe default
-        }
-    }
-
-    private async Task<bool> CanDeleteAdminUser(string userId)
-    {
-        try
-        {
-            var adminCount = await AdminService.GetUsersInRoleCountAsync("Admin");
-            return adminCount > 1; // Can delete if there's more than one admin
-        }
-        catch
-        {
-            return false; // Safe default
+            return false; // Safe default: never strand the last admin
         }
     }
 }
