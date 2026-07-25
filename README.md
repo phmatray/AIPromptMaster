@@ -1,5 +1,49 @@
 ![AIPromptMaster banner](.github/banner.png)
 
+# AIPromptMaster
+
+A .NET Aspire solution for managing AI prompts, made of three services orchestrated
+by `PromptMaster.AppHost`:
+
+| Project | Role |
+|---|---|
+| `AIPromptManager` | Blazor front end — prompt library, categories, admin pages |
+| `PromptMaster.BackgroundProcessor` | Scheduled jobs, backed by [TickerQ](https://tickerq.net) |
+| `PromptMaster.ServiceDefaults` | Shared telemetry, health checks and service discovery |
+
+Both services get their own PostgreSQL database from the AppHost, so running the
+solution needs nothing installed beyond the .NET SDK and a container runtime:
+
+```bash
+dotnet run --project PromptMaster.AppHost
+```
+
+## TickerQ dashboard
+
+The background processor serves TickerQ's live dashboard at `/tickerq`, behind
+HTTP basic auth. This repository is open source and ships a **working test
+account** so the dashboard is usable straight after a clone:
+
+| | |
+|---|---|
+| Username | `admin` |
+| Password | `tickerq` |
+
+These credentials are public by design — the dashboard only ever exposes the two
+demo jobs in `PromptMaster.BackgroundProcessor/Jobs/MyJobs.cs`. Any deployment
+holding real data should override them, no rebuild required:
+
+```bash
+TickerQ__Dashboard__Username=your-user
+TickerQ__Dashboard__Password=your-password
+```
+
+---
+
+> **Note** — everything below is the README of the
+> [Claude Code PM](https://github.com/automazeio/ccpm) workflow template this repo
+> was bootstrapped from. It documents that tooling, not AIPromptMaster.
+
 # Claude Code PM
 
 [![Automaze](https://img.shields.io/badge/By-automaze.io-4b3baf)](https://automaze.io)
